@@ -5,7 +5,8 @@ export function getCategoryBadgeStyle(category: Category): string {
     Student: 'bg-[hsl(var(--badge-std-bg))] text-[hsl(var(--badge-std))]',
     Organization: 'bg-[hsl(var(--badge-org-bg))] text-[hsl(var(--badge-org))]',
     Graduate: 'bg-[hsl(var(--badge-grd-bg))] text-[hsl(var(--badge-grd))]',
-    Individual: 'bg-[hsl(var(--badge-ind-bg))] text-[hsl(var(--badge-ind))]',
+    'Trained Auditor': 'bg-[hsl(var(--badge-ind-bg))] text-[hsl(var(--badge-ind))]',
+    Consultant: 'bg-[hsl(var(--badge-con-bg))] text-[hsl(var(--badge-con))]',
   };
   return styles[category];
 }

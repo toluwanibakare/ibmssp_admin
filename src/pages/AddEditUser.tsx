@@ -19,7 +19,7 @@ interface Errors {
   category?: string;
 }
 
-const CATEGORIES: Category[] = ['Student', 'Organization', 'Graduate', 'Individual'];
+const CATEGORIES: Category[] = ['Student', 'Organization', 'Graduate', 'Trained Auditor', 'Consultant'];
 
 export default function AddEditUser() {
   const navigate = useNavigate();

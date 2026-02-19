@@ -64,6 +64,10 @@ export default {
           active: "hsl(var(--sidebar-active-bg))",
           hover: "hsl(var(--sidebar-hover-bg))",
         },
+        badge: {
+          con: "hsl(var(--badge-con))",
+          "con-bg": "hsl(var(--badge-con-bg))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -30,7 +30,8 @@ export default function Dashboard() {
   const students = users.filter(u => u.category === 'Student').length;
   const graduates = users.filter(u => u.category === 'Graduate').length;
   const orgs = users.filter(u => u.category === 'Organization').length;
-  const individuals = users.filter(u => u.category === 'Individual').length;
+  const auditors = users.filter(u => u.category === 'Trained Auditor').length;
+  const consultants = users.filter(u => u.category === 'Consultant').length;
   const todayCount = getTodayRegistrations(users);
   const recentUsers = [...users].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 8);
 
@@ -52,12 +53,13 @@ export default function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-4">
         <StatCard label="Total Users" value={users.length} icon={Users} color="bg-primary/10 text-primary" />
         <StatCard label="Students" value={students} icon={GraduationCap} color="bg-[hsl(var(--badge-std-bg))] text-[hsl(var(--badge-std))]" />
         <StatCard label="Graduates" value={graduates} icon={UserCheck} color="bg-[hsl(var(--badge-grd-bg))] text-[hsl(var(--badge-grd))]" />
         <StatCard label="Organizations" value={orgs} icon={Building2} color="bg-[hsl(var(--badge-org-bg))] text-[hsl(var(--badge-org))]" />
-        <StatCard label="Individuals" value={individuals} icon={User} color="bg-[hsl(var(--badge-ind-bg))] text-[hsl(var(--badge-ind))]" />
+        <StatCard label="Trained Auditors" value={auditors} icon={User} color="bg-[hsl(var(--badge-ind-bg))] text-[hsl(var(--badge-ind))]" />
+        <StatCard label="Consultants" value={consultants} icon={User} color="bg-[hsl(var(--badge-con-bg))] text-[hsl(var(--badge-con))]" />
         <StatCard label="Today" value={todayCount} icon={TrendingUp} color="bg-success/10 text-success" sub="New today" />
       </div>
 
