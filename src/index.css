@@ -7,51 +7,51 @@
 @layer base {
   :root {
     /* Page surface */
-    --background: 220 20% 97%;
-    --foreground: 222 47% 11%;
+    --background: 200 20% 97%;
+    --foreground: 200 30% 12%;
 
     /* Card / panel surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 200 30% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 200 30% 12%;
 
-    /* Brand blue – primary actions */
-    --primary: 217 91% 52%;
+    /* Deep teal – primary actions */
+    --primary: 181 70% 32%;
     --primary-foreground: 0 0% 100%;
 
-    /* Subtle tinted surface */
-    --secondary: 217 30% 93%;
-    --secondary-foreground: 222 47% 20%;
+    /* Blue-gray – secondary */
+    --secondary: 207 25% 88%;
+    --secondary-foreground: 207 30% 25%;
 
     /* Disabled / placeholder tones */
-    --muted: 220 16% 94%;
-    --muted-foreground: 220 14% 52%;
+    --muted: 205 18% 93%;
+    --muted-foreground: 205 16% 50%;
 
     /* Highlight / hover tint */
-    --accent: 217 91% 95%;
-    --accent-foreground: 217 91% 35%;
+    --accent: 181 70% 93%;
+    --accent-foreground: 181 70% 22%;
 
     /* Danger */
     --destructive: 0 80% 57%;
     --destructive-foreground: 0 0% 100%;
 
     /* Borders & inputs */
-    --border: 220 18% 90%;
-    --input: 220 18% 90%;
-    --ring: 217 91% 52%;
+    --border: 205 18% 88%;
+    --input: 205 18% 88%;
+    --ring: 181 70% 32%;
 
     --radius: 0.625rem;
 
-    /* Dark sidebar */
-    --sidebar-bg: 222 47% 11%;
-    --sidebar-fg: 210 40% 90%;
-    --sidebar-active-bg: 217 91% 52%;
+    /* Dark sidebar – deep teal-slate */
+    --sidebar-bg: 200 35% 13%;
+    --sidebar-fg: 200 30% 88%;
+    --sidebar-active-bg: 181 70% 32%;
     --sidebar-active-fg: 0 0% 100%;
-    --sidebar-hover-bg: 222 40% 18%;
-    --sidebar-muted: 220 20% 55%;
-    --sidebar-border: 222 40% 16%;
+    --sidebar-hover-bg: 200 30% 20%;
+    --sidebar-muted: 200 20% 52%;
+    --sidebar-border: 200 30% 18%;
 
     /* Status colors */
     --success: 142 71% 45%;
@@ -62,8 +62,8 @@
     --info-fg: 0 0% 100%;
 
     /* Category badge colors */
-    --badge-std: 217 91% 52%;
-    --badge-std-bg: 217 91% 95%;
+    --badge-std: 181 70% 32%;
+    --badge-std-bg: 181 70% 93%;
     --badge-org: 142 71% 45%;
     --badge-org-bg: 142 71% 93%;
     --badge-grd: 38 92% 50%;
@@ -72,9 +72,9 @@
     --badge-ind-bg: 280 67% 95%;
 
     /* Shadows */
-    --shadow-card: 0 1px 3px 0 hsl(220 20% 80% / 0.4), 0 1px 2px -1px hsl(220 20% 80% / 0.4);
-    --shadow-dropdown: 0 10px 15px -3px hsl(222 47% 11% / 0.08), 0 4px 6px -4px hsl(222 47% 11% / 0.08);
-    --shadow-modal: 0 20px 25px -5px hsl(222 47% 11% / 0.1), 0 8px 10px -6px hsl(222 47% 11% / 0.1);
+    --shadow-card: 0 1px 3px 0 hsl(200 20% 75% / 0.4), 0 1px 2px -1px hsl(200 20% 75% / 0.4);
+    --shadow-dropdown: 0 10px 15px -3px hsl(200 35% 13% / 0.08), 0 4px 6px -4px hsl(200 35% 13% / 0.08);
+    --shadow-modal: 0 20px 25px -5px hsl(200 35% 13% / 0.1), 0 8px 10px -6px hsl(200 35% 13% / 0.1);
   }
 }
 
