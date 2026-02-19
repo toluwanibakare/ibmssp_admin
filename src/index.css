@@ -70,6 +70,8 @@
     --badge-grd-bg: 38 92% 93%;
     --badge-ind: 280 67% 55%;
     --badge-ind-bg: 280 67% 95%;
+    --badge-con: 199 89% 38%;
+    --badge-con-bg: 199 89% 92%;
 
     /* Shadows */
     --shadow-card: 0 1px 3px 0 hsl(200 20% 75% / 0.4), 0 1px 2px -1px hsl(200 20% 75% / 0.4);

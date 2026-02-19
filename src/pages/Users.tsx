@@ -58,7 +58,8 @@ export default function Users() {
             <option value="Student">Student</option>
             <option value="Organization">Organization</option>
             <option value="Graduate">Graduate</option>
-            <option value="Individual">Individual</option>
+            <option value="Trained Auditor">Trained Auditor</option>
+            <option value="Consultant">Consultant</option>
           </select>
         </div>
       </div>

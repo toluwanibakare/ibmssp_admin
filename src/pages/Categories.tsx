@@ -9,6 +9,7 @@ const COLOR_MAP: Record<string, string> = {
   green: 'bg-[hsl(var(--badge-org-bg))] text-[hsl(var(--badge-org))]',
   amber: 'bg-[hsl(var(--badge-grd-bg))] text-[hsl(var(--badge-grd))]',
   violet: 'bg-[hsl(var(--badge-ind-bg))] text-[hsl(var(--badge-ind))]',
+  teal: 'bg-[hsl(var(--badge-con-bg))] text-[hsl(var(--badge-con))]',
 };
 
 export default function Categories() {

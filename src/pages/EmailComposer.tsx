@@ -119,7 +119,7 @@ export default function EmailComposer() {
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium">Category</label>
                   <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value as Category)} className="input-field">
-                    {(['Student', 'Organization', 'Graduate', 'Individual'] as Category[]).map(c => (
+                    {(['Student', 'Organization', 'Graduate', 'Trained Auditor', 'Consultant'] as Category[]).map(c => (
                       <option key={c} value={c}>{c} ({users.filter(u => u.category === c).length} users)</option>
                     ))}
                   </select>
