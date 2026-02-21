@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Send, Users, User, Tag, Clock } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Send, User, Tag, Clock } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { timeAgo } from '@/lib/utils-ui';
 
 type RecipientMode = 'single' | 'category';
 
 export default function EmailComposer() {
-  const { members, logs, sendEmail } = useData();
-  const navigate = useNavigate();
+  const { members, emails, sendEmail } = useData();
   const [searchParams] = useSearchParams();
   const preEmail = searchParams.get('email') || '';
   const preName = searchParams.get('name') || '';
@@ -37,11 +36,11 @@ export default function EmailComposer() {
     setSending(true);
     try {
       if (mode === 'single') {
-        await sendEmail({ to: recipientTo, subject, text: body, html: `<p>${body.replace(/\n/g, '<br>')}</p>` });
+        await sendEmail({ to: recipientTo, recipientName: recipientName || recipientTo, subject, text: body, html: `<p>${body.replace(/\n/g, '<br>')}</p>` });
       } else {
         const catMembers = members.filter(m => m.category === selectedCategory);
         for (const m of catMembers) {
-          await sendEmail({ to: m.email, subject, text: body, html: `<p>${body.replace(/\n/g, '<br>')}</p>` });
+          await sendEmail({ to: m.email, recipientName: `${m.first_name} ${m.last_name}`, subject, text: body, html: `<p>${body.replace(/\n/g, '<br>')}</p>` });
         }
       }
       setSent(true);
@@ -51,7 +50,7 @@ export default function EmailComposer() {
     }
   };
 
-  const emailLogs = logs.filter(l => l.action === 'EMAIL_SENT').slice(0, 20);
+  const recentEmails = emails.slice(0, 20);
 
   return (
     <div className="space-y-5">
@@ -63,16 +62,14 @@ export default function EmailComposer() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-5">
-        {/* Composer */}
         <div className="lg:col-span-2 space-y-4">
           {sent && (
             <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-success/10 border border-success/30 text-success text-sm font-medium">
-              <Send size={14} /> Email sent successfully!
+              <Send size={14} /> Email recorded successfully!
             </div>
           )}
 
           <div className="bg-card rounded-xl border border-border shadow-card p-5 space-y-4">
-            {/* Mode */}
             <div>
               <label className="text-xs font-medium mb-2 block">Send to</label>
               <div className="flex gap-2">
@@ -86,32 +83,20 @@ export default function EmailComposer() {
               </div>
             </div>
 
-            {/* Recipient */}
             {mode === 'single' ? (
               <div className="space-y-2">
                 <label className="text-xs font-medium">Recipient Email</label>
-                <input
-                  type="email"
-                  value={recipientTo}
-                  onChange={e => setRecipientTo(e.target.value)}
-                  placeholder="member@example.com"
-                  className={`input-field ${errors.recipient ? 'border-destructive' : ''}`}
-                />
+                <input type="email" value={recipientTo} onChange={e => setRecipientTo(e.target.value)} placeholder="member@example.com"
+                  className={`input-field ${errors.recipient ? 'border-destructive' : ''}`} />
                 {errors.recipient && <p className="text-xs text-destructive">{errors.recipient}</p>}
                 <label className="text-xs font-medium">Or select a member</label>
-                <select
-                  value={recipientTo}
-                  onChange={e => {
-                    const m = members.find(m => m.email === e.target.value);
-                    setRecipientTo(e.target.value);
-                    if (m) setRecipientName(`${m.first_name} ${m.last_name}`);
-                  }}
-                  className="input-field"
-                >
+                <select value={recipientTo} onChange={e => {
+                  const m = members.find(m => m.email === e.target.value);
+                  setRecipientTo(e.target.value);
+                  if (m) setRecipientName(`${m.first_name} ${m.last_name}`);
+                }} className="input-field">
                   <option value="">— Pick from list —</option>
-                  {members.map(m => (
-                    <option key={m.member_id} value={m.email}>{m.public_id} – {m.first_name} {m.last_name}</option>
-                  ))}
+                  {members.map(m => <option key={m.member_id} value={m.email}>{m.public_id} – {m.first_name} {m.last_name}</option>)}
                 </select>
               </div>
             ) : (
@@ -126,39 +111,39 @@ export default function EmailComposer() {
               </div>
             )}
 
-            {/* Subject */}
             <div className="space-y-1.5">
               <label className="text-xs font-medium">Subject</label>
-              <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Email subject…" className={`input-field ${errors.subject ? 'border-destructive' : ''}`} />
+              <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Email subject…"
+                className={`input-field ${errors.subject ? 'border-destructive' : ''}`} />
               {errors.subject && <p className="text-xs text-destructive">{errors.subject}</p>}
             </div>
 
-            {/* Body */}
             <div className="space-y-1.5">
               <label className="text-xs font-medium">Message</label>
-              <textarea value={body} onChange={e => setBody(e.target.value)} rows={8} placeholder="Write your message here…" className={`input-field resize-none text-sm leading-relaxed ${errors.body ? 'border-destructive' : ''}`} />
+              <textarea value={body} onChange={e => setBody(e.target.value)} rows={8} placeholder="Write your message here…"
+                className={`input-field resize-none text-sm leading-relaxed ${errors.body ? 'border-destructive' : ''}`} />
               {errors.body && <p className="text-xs text-destructive">{errors.body}</p>}
             </div>
 
-            <button onClick={handleSend} disabled={sending || sent} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60 transition-colors">
+            <button onClick={handleSend} disabled={sending || sent}
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60 transition-colors">
               {sending ? 'Sending…' : sent ? 'Sent!' : <><Send size={14} /> Send Email</>}
             </button>
           </div>
         </div>
 
-        {/* Email Log Sidebar */}
         <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border flex items-center gap-2">
             <Clock size={14} className="text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Email Activity</h3>
+            <h3 className="text-sm font-semibold">Recent Emails</h3>
           </div>
           <div className="divide-y divide-border overflow-y-auto max-h-[500px]">
-            {emailLogs.length === 0 ? (
+            {recentEmails.length === 0 ? (
               <p className="text-sm text-muted-foreground px-4 py-6">No emails sent yet.</p>
-            ) : emailLogs.map(log => (
-              <div key={log.id} className="px-4 py-3">
-                <p className="text-xs font-medium truncate">{log.description}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{timeAgo(log.created_at)}</p>
+            ) : recentEmails.map(e => (
+              <div key={e.id} className="px-4 py-3">
+                <p className="text-xs font-medium truncate">{e.subject}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">To: {e.recipient_name} · {timeAgo(e.sent_at)}</p>
               </div>
             ))}
           </div>
