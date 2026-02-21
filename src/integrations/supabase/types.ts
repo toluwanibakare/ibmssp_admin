@@ -14,16 +14,375 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          description: string | null
+          id: number
+          member_id: number | null
+          performed_by: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          description?: string | null
+          id?: never
+          member_id?: number | null
+          performed_by?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          description?: string | null
+          id?: never
+          member_id?: number | null
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["member_id"]
+          },
+        ]
+      }
+      graduate_details: {
+        Row: {
+          certificate_file: string | null
+          cv_file: string | null
+          graduation_year: number
+          institution: string
+          member_id: number
+          ny_sc_status: string | null
+          qualification: string
+          study_duration: string | null
+        }
+        Insert: {
+          certificate_file?: string | null
+          cv_file?: string | null
+          graduation_year: number
+          institution: string
+          member_id: number
+          ny_sc_status?: string | null
+          qualification: string
+          study_duration?: string | null
+        }
+        Update: {
+          certificate_file?: string | null
+          cv_file?: string | null
+          graduation_year?: number
+          institution?: string
+          member_id?: number
+          ny_sc_status?: string | null
+          qualification?: string
+          study_duration?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "graduate_details_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "members"
+            referencedColumns: ["member_id"]
+          },
+        ]
+      }
+      members: {
+        Row: {
+          address: string | null
+          category: string
+          country: string | null
+          created_at: string
+          date_of_birth: string | null
+          email: string
+          first_name: string
+          gender: string | null
+          last_name: string
+          member_id: number
+          other_name: string | null
+          payment_status: string
+          phone: string
+          public_id: string | null
+          registration_status: string
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          category: string
+          country?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          email: string
+          first_name: string
+          gender?: string | null
+          last_name: string
+          member_id?: never
+          other_name?: string | null
+          payment_status?: string
+          phone: string
+          public_id?: string | null
+          registration_status?: string
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          category?: string
+          country?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string
+          first_name?: string
+          gender?: string | null
+          last_name?: string
+          member_id?: never
+          other_name?: string | null
+          payment_status?: string
+          phone?: string
+          public_id?: string | null
+          registration_status?: string
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organization_details: {
+        Row: {
+          company_address: string | null
+          company_certificate_file: string | null
+          company_email: string
+          company_phone: string
+          contact_person: string | null
+          contact_person_role: string | null
+          industry: string | null
+          iso_start_year: string | null
+          member_id: number
+          number_of_staff: number | null
+          organization_name: string
+          organization_type: string | null
+          rc_number: string | null
+        }
+        Insert: {
+          company_address?: string | null
+          company_certificate_file?: string | null
+          company_email: string
+          company_phone: string
+          contact_person?: string | null
+          contact_person_role?: string | null
+          industry?: string | null
+          iso_start_year?: string | null
+          member_id: number
+          number_of_staff?: number | null
+          organization_name: string
+          organization_type?: string | null
+          rc_number?: string | null
+        }
+        Update: {
+          company_address?: string | null
+          company_certificate_file?: string | null
+          company_email?: string
+          company_phone?: string
+          contact_person?: string | null
+          contact_person_role?: string | null
+          industry?: string | null
+          iso_start_year?: string | null
+          member_id?: number
+          number_of_staff?: number | null
+          organization_name?: string
+          organization_type?: string | null
+          rc_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_details_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "members"
+            referencedColumns: ["member_id"]
+          },
+        ]
+      }
+      professional_details: {
+        Row: {
+          current_company: string | null
+          cv_file: string | null
+          license_number: string | null
+          member_id: number
+          profession: string
+          professional_certifications: string | null
+          specialization: string | null
+          years_of_experience: number | null
+        }
+        Insert: {
+          current_company?: string | null
+          cv_file?: string | null
+          license_number?: string | null
+          member_id: number
+          profession: string
+          professional_certifications?: string | null
+          specialization?: string | null
+          years_of_experience?: number | null
+        }
+        Update: {
+          current_company?: string | null
+          cv_file?: string | null
+          license_number?: string | null
+          member_id?: number
+          profession?: string
+          professional_certifications?: string | null
+          specialization?: string | null
+          years_of_experience?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_details_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "members"
+            referencedColumns: ["member_id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      sent_emails: {
+        Row: {
+          body: string | null
+          id: number
+          member_id: number | null
+          recipient_email: string
+          recipient_name: string | null
+          sent_at: string
+          sent_by: string | null
+          status: string
+          subject: string
+        }
+        Insert: {
+          body?: string | null
+          id?: never
+          member_id?: number | null
+          recipient_email: string
+          recipient_name?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          status?: string
+          subject: string
+        }
+        Update: {
+          body?: string | null
+          id?: never
+          member_id?: number | null
+          recipient_email?: string
+          recipient_name?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          status?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sent_emails_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["member_id"]
+          },
+        ]
+      }
+      student_details: {
+        Row: {
+          course_of_study: string
+          expected_graduation_year: number | null
+          institution_name: string
+          level: string | null
+          matric_number: string | null
+          member_id: number
+          student_id_card_file: string | null
+        }
+        Insert: {
+          course_of_study: string
+          expected_graduation_year?: number | null
+          institution_name: string
+          level?: string | null
+          matric_number?: string | null
+          member_id: number
+          student_id_card_file?: string | null
+        }
+        Update: {
+          course_of_study?: string
+          expected_graduation_year?: number | null
+          institution_name?: string
+          level?: string | null
+          matric_number?: string | null
+          member_id?: number
+          student_id_card_file?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_details_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "members"
+            referencedColumns: ["member_id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "editor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +509,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "editor"],
+    },
   },
 } as const

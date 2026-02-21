@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, GraduationCap, Building2, User, UserCheck, Plus, Mail, ArrowUpRight, TrendingUp } from 'lucide-react';
+import { Users, GraduationCap, Building2, User, UserCheck, Mail, ArrowUpRight, TrendingUp } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { CategoryBadge, timeAgo } from '@/lib/utils-ui';
 
@@ -44,7 +44,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard label="Total Members" value={stats.total} icon={Users} color="bg-primary/10 text-primary" />
         <StatCard label="Students" value={stats.student} icon={GraduationCap} color="bg-[hsl(var(--badge-std-bg))] text-[hsl(var(--badge-std))]" />
@@ -55,7 +54,6 @@ export default function Dashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent Registrations */}
         <div className="lg:col-span-2 bg-card rounded-xl border border-border shadow-card overflow-hidden">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <h2 className="text-sm font-semibold">Recent Registrations</h2>
@@ -64,15 +62,7 @@ export default function Dashboard() {
             </button>
           </div>
           <table className="data-table">
-            <thead>
-              <tr>
-                <th>Registration ID</th>
-                <th>Name</th>
-                <th>Category</th>
-                <th>Status</th>
-                <th>Registered</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Registration ID</th><th>Name</th><th>Category</th><th>Status</th><th>Registered</th></tr></thead>
             <tbody>
               {members.slice(0, 8).map(m => (
                 <tr key={m.member_id} className="cursor-pointer" onClick={() => navigate(`/members/${m.member_id}`)}>
@@ -83,16 +73,11 @@ export default function Dashboard() {
                   <td className="text-muted-foreground text-xs">{timeAgo(m.created_at)}</td>
                 </tr>
               ))}
-              {members.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="text-center py-8 text-muted-foreground">No registrations found</td>
-                </tr>
-              )}
+              {members.length === 0 && <tr><td colSpan={5} className="text-center py-8 text-muted-foreground">No registrations found</td></tr>}
             </tbody>
           </table>
         </div>
 
-        {/* Recent Activity */}
         <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <h2 className="text-sm font-semibold">Recent Activity</h2>
@@ -103,19 +88,14 @@ export default function Dashboard() {
           <div className="divide-y divide-border">
             {logs.slice(0, 8).map(log => (
               <div key={log.id} className="px-5 py-3 flex gap-3 items-start">
-                <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${log.action === 'REGISTRATION' ? 'bg-success' :
-                    log.action === 'APPROVAL' ? 'bg-primary' :
-                      'bg-muted-foreground'
-                  }`} />
+                <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${log.action === 'REGISTRATION' ? 'bg-success' : log.action === 'APPROVAL' ? 'bg-primary' : 'bg-muted-foreground'}`} />
                 <div>
                   <p className="text-sm">{log.description}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{timeAgo(log.created_at)}</p>
                 </div>
               </div>
             ))}
-            {logs.length === 0 && (
-              <div className="px-5 py-8 text-center text-muted-foreground text-sm">No activity logs</div>
-            )}
+            {logs.length === 0 && <div className="px-5 py-8 text-center text-muted-foreground text-sm">No activity logs</div>}
           </div>
         </div>
       </div>

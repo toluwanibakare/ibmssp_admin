@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Members from "./pages/Members";
 import MemberProfile from "./pages/MemberProfile";
 import EmailComposer from "./pages/EmailComposer";
+import Messages from "./pages/Messages";
 import ActivityLogs from "./pages/ActivityLogs";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -43,6 +44,7 @@ const App = () => (
                 <Route path="/members" element={<Members />} />
                 <Route path="/members/:id" element={<MemberProfile />} />
                 <Route path="/email-composer" element={<EmailComposer />} />
+                <Route path="/messages" element={<Messages />} />
                 <Route path="/activity-logs" element={<ActivityLogs />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>

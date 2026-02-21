@@ -41,24 +41,14 @@ export default function ActivityLogs() {
                 <ActionIcon action={log.action} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{log.description}</p>
-                  {log.Member?.public_id && (
-                    <p className="text-xs font-mono text-primary mt-0.5">{log.Member.public_id}</p>
-                  )}
-                  <div className="flex items-center gap-3 mt-1">
-                    {log.Member && (
-                      <span className="text-xs text-muted-foreground">{log.Member.first_name} {log.Member.last_name}</span>
-                    )}
-                    <span className="text-xs text-muted-foreground">·</span>
-                    <span className="text-xs text-muted-foreground">{formatDateTime(log.created_at)}</span>
-                  </div>
+                  <span className="text-xs text-muted-foreground">{formatDateTime(log.created_at)}</span>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-md font-medium capitalize whitespace-nowrap ${log.action === 'REGISTRATION' ? 'bg-[hsl(var(--badge-org-bg))] text-[hsl(var(--badge-org))]' :
-                    log.action === 'APPROVAL' ? 'bg-success/10 text-success' :
-                      log.action === 'EMAIL_SENT' ? 'bg-primary/10 text-primary' :
-                        'bg-muted text-muted-foreground'
-                  }`}>
-                  {log.action}
-                </span>
+                <span className={`text-xs px-2 py-0.5 rounded-md font-medium capitalize whitespace-nowrap ${
+                  log.action === 'REGISTRATION' ? 'bg-[hsl(var(--badge-org-bg))] text-[hsl(var(--badge-org))]' :
+                  log.action === 'APPROVAL' ? 'bg-success/10 text-success' :
+                  log.action === 'EMAIL_SENT' ? 'bg-primary/10 text-primary' :
+                  'bg-muted text-muted-foreground'
+                }`}>{log.action}</span>
               </div>
             ))}
           </div>
