@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { Save, User, Bell, Shield, Globe } from 'lucide-react';
+import { Save, User, Globe, Key, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Settings() {
-  const { user } = useAuth();
-  const [name, setName] = useState(user?.name || 'Admin User');
-  const [email, setEmail] = useState(user?.email || 'admin@registry.com');
+  const { user, logout } = useAuth();
   const [saved, setSaved] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {
@@ -18,84 +16,95 @@ export default function Settings() {
     <div className="space-y-5 max-w-2xl">
       <div>
         <h1 className="page-title">Settings</h1>
-        <p className="page-subtitle">Manage your admin account and preferences</p>
+        <p className="page-subtitle">Manage your IBMSSP admin account</p>
       </div>
 
       {/* Profile */}
       <div className="bg-card rounded-xl border border-border shadow-card p-5">
         <div className="flex items-center gap-2 mb-4">
           <User size={15} className="text-muted-foreground" />
-          <h2 className="text-sm font-semibold">Profile</h2>
+          <h2 className="text-sm font-semibold">Account Profile</h2>
         </div>
         <form onSubmit={handleSave} className="space-y-4">
           {saved && (
-            <div className="px-3 py-2 rounded-lg bg-[hsl(var(--badge-org-bg))] text-[hsl(var(--badge-org))] text-sm">
+            <div className="px-3 py-2 rounded-lg bg-success/10 text-success text-sm">
               Settings saved successfully.
             </div>
           )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium">Full Name</label>
-              <input value={name} onChange={e => setName(e.target.value)} className="input-field" />
+              <input defaultValue={user?.name || ''} className="input-field" readOnly />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium">Email Address</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" />
+              <input type="email" defaultValue={user?.email || ''} className="input-field" readOnly />
             </div>
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium">Role</label>
-            <input value="Super Admin" readOnly className="input-field bg-muted/50 text-muted-foreground cursor-not-allowed" />
+            <input value={user?.role || 'admin'} readOnly className="input-field bg-muted/50 text-muted-foreground cursor-not-allowed capitalize" />
           </div>
-          <button type="submit" className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-            <Save size={13} /> Save changes
-          </button>
         </form>
-      </div>
-
-      {/* Notifications */}
-      <div className="bg-card rounded-xl border border-border shadow-card p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Bell size={15} className="text-muted-foreground" />
-          <h2 className="text-sm font-semibold">Notifications</h2>
-        </div>
-        <div className="space-y-3">
-          {[
-            { label: 'New user registrations', sub: 'Get notified when a new user registers' },
-            { label: 'Email delivery failures', sub: 'Alert when an email fails to send' },
-            { label: 'Weekly digest', sub: 'Summary of registry activity each week' },
-          ].map(item => (
-            <div key={item.label} className="flex items-center justify-between py-2 border-b border-border last:border-b-0">
-              <div>
-                <p className="text-sm font-medium">{item.label}</p>
-                <p className="text-xs text-muted-foreground">{item.sub}</p>
-              </div>
-              <button className="w-9 h-5 rounded-full bg-primary relative transition-colors">
-                <span className="absolute right-0.5 top-0.5 w-4 h-4 rounded-full bg-primary-foreground shadow transition-transform" />
-              </button>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* System Info */}
       <div className="bg-card rounded-xl border border-border shadow-card p-5">
         <div className="flex items-center gap-2 mb-4">
           <Globe size={15} className="text-muted-foreground" />
-          <h2 className="text-sm font-semibold">System</h2>
+          <h2 className="text-sm font-semibold">System Information</h2>
         </div>
         <div className="grid grid-cols-2 gap-y-3 text-sm">
           {[
+            ['Application', 'IBMSSP ADMIN Registry'],
             ['Version', '1.0.0'],
-            ['Environment', 'Demo'],
-            ['Timezone', 'UTC'],
-            ['Date Format', 'MMM DD, YYYY'],
+            ['Environment', 'Production'],
+            ['Domain', 'admin.ibmssp.org.ng'],
+            ['Timezone', 'Africa/Lagos (WAT)'],
+            ['Date Format', 'DD MMM YYYY'],
           ].map(([k, v]) => (
             <React.Fragment key={k}>
               <span className="text-muted-foreground">{k}</span>
               <span className="font-medium">{v}</span>
             </React.Fragment>
           ))}
+        </div>
+      </div>
+
+      {/* Webhook Config */}
+      <div className="bg-card rounded-xl border border-border shadow-card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Key size={15} className="text-muted-foreground" />
+          <h2 className="text-sm font-semibold">WordPress Integration</h2>
+        </div>
+        <div className="space-y-3 text-sm">
+          <p className="text-muted-foreground text-xs">Configure your WordPress Contact Form 7 webhook to submit to:</p>
+          <div className="font-mono text-xs bg-muted/40 px-3 py-2 rounded-lg break-all text-primary select-all">
+            {(import.meta.env.VITE_API_URL || 'http://localhost:5000/api')}/register
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-medium">Required Header:</p>
+            <div className="font-mono text-xs bg-muted/40 px-3 py-2 rounded-lg text-muted-foreground">
+              x-api-key: ibmssp_admin_secret_key_2024
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">Method: <span className="font-semibold text-foreground">POST</span> &nbsp;|&nbsp; Content-Type: <span className="font-semibold text-foreground">application/json</span></p>
+        </div>
+      </div>
+
+      {/* Logout */}
+      <div className="bg-card rounded-xl border border-destructive/20 shadow-card p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-destructive">Sign Out</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Sign out of the IBMSSP admin panel</p>
+          </div>
+          <button
+            onClick={logout}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors"
+          >
+            <LogOut size={13} /> Sign Out
+          </button>
         </div>
       </div>
     </div>

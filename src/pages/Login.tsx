@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Login() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('admin@registry.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
   if (isAuthenticated) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,12 +20,11 @@ export default function Login() {
     setError('');
     if (!email) { setError('Email is required'); return; }
     if (!password) { setError('Password is required'); return; }
-    if (password.length < 6) { setError('Password must be at least 6 characters'); return; }
     setLoading(true);
     const ok = await login(email, password);
     setLoading(false);
     if (ok) navigate('/');
-    else setError('Invalid credentials. Please try again.');
+    else setError('Invalid credentials. Please check your email and password.');
   };
 
   return (
@@ -33,11 +32,11 @@ export default function Login() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-primary mx-auto flex items-center justify-center mb-4">
-            <span className="text-xl font-bold text-primary-foreground">R</span>
+          <div className="w-14 h-14 rounded-2xl bg-primary mx-auto flex items-center justify-center mb-4 shadow-lg">
+            <ShieldCheck size={26} className="text-primary-foreground" />
           </div>
-          <h1 className="text-xl font-semibold text-foreground">Registry Admin</h1>
-          <p className="text-sm text-muted-foreground mt-1">Sign in to your admin account</p>
+          <h1 className="text-xl font-bold text-foreground">IBMSSP ADMIN</h1>
+          <p className="text-sm text-muted-foreground mt-1">Member Registry Management System</p>
         </div>
 
         <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
@@ -56,8 +55,9 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="admin@registry.com"
+                  placeholder="info@ibmssp.org.ng"
                   className="input-field pl-9"
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -72,6 +72,7 @@ export default function Login() {
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="input-field pl-9 pr-10"
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -83,21 +84,10 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="remember"
-                checked={rememberMe}
-                onChange={e => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-border accent-primary"
-              />
-              <label htmlFor="remember" className="text-sm text-muted-foreground">Remember me</label>
-            </div>
-
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
+              className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60 mt-2"
             >
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
@@ -105,7 +95,7 @@ export default function Login() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-4">
-          Demo: any email + password (6+ chars)
+          © 2025 IBMSSP ADMIN. Secure access only.
         </p>
       </div>
     </div>

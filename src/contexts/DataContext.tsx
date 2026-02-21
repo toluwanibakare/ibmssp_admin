@@ -1,86 +1,141 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import {
-  User, EmailMessage, ActivityLog, CategoryDef,
-  mockUsers, mockEmails, mockLogs, categoryDefs, categoryCounters,
-  getPrefixForCategory, formatPublicId, Category
-} from '@/lib/mock-data';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import api from '../lib/api';
+
+export interface Member {
+  member_id: number;
+  public_id: string;
+  category: 'student' | 'graduate' | 'individual' | 'organization';
+  first_name: string;
+  last_name: string;
+  other_name?: string;
+  email: string;
+  phone: string;
+  registration_status: string;
+  payment_status: string;
+  created_at: string;
+}
+
+export interface ActivityLog {
+  id: number;
+  member_id: number;
+  action: string;
+  description: string;
+  created_at: string;
+  Member?: {
+    first_name: string;
+    last_name: string;
+    public_id: string;
+  }
+}
+
+interface Stats {
+  total: number;
+  student: number;
+  graduate: number;
+  individual: number;
+  organization: number;
+  today: number;
+}
 
 interface DataContextType {
-  users: User[];
-  emails: EmailMessage[];
+  members: Member[];
   logs: ActivityLog[];
-  categories: CategoryDef[];
-  addUser: (data: Omit<User, 'id' | 'publicId' | 'createdAt' | 'status'>) => User;
-  updateUser: (id: number, data: Partial<User>) => void;
-  deleteUser: (id: number) => void;
-  sendEmail: (email: Omit<EmailMessage, 'id' | 'sentAt'>) => void;
-  addLog: (log: Omit<ActivityLog, 'id' | 'timestamp'>) => void;
-  updateCategory: (id: number, data: Partial<CategoryDef>) => void;
-  deleteCategory: (id: number) => void;
+  stats: Stats;
+  isLoading: boolean;
+  fetchMembers: (params?: any) => Promise<void>;
+  fetchLogs: () => Promise<void>;
+  approveMember: (id: number) => Promise<void>;
+  sendEmail: (data: any) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
 
+const initialStats: Stats = {
+  total: 0,
+  student: 0,
+  graduate: 0,
+  individual: 0,
+  organization: 0,
+  today: 0
+};
+
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<User[]>(mockUsers);
-  const [emails, setEmails] = useState<EmailMessage[]>(mockEmails);
-  const [logs, setLogs] = useState<ActivityLog[]>(mockLogs);
-  const [categories, setCategories] = useState<CategoryDef[]>(categoryDefs);
-  const [counters, setCounters] = useState<Record<string, number>>(categoryCounters);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [stats, setStats] = useState<Stats>(initialStats);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const addUser = (data: Omit<User, 'id' | 'publicId' | 'createdAt' | 'status'>): User => {
-    const prefix = getPrefixForCategory(data.category);
-    const nextNum = (counters[prefix] || 0) + 1;
-    const publicId = formatPublicId(prefix, nextNum);
-    const newUser: User = {
-      ...data,
-      id: users.length + 1,
-      publicId,
-      createdAt: new Date().toISOString(),
-      status: 'active',
-    };
-    setCounters(c => ({ ...c, [prefix]: nextNum }));
-    setUsers(u => [...u, newUser]);
-    setCategories(cats => cats.map(c => c.prefix === prefix ? { ...c, count: c.count + 1 } : c));
-    addLog({ action: 'user_created', description: `New user registered: ${data.fullName} (${publicId})`, userId: newUser.id, publicId, performedBy: 'admin@registry.com' });
-    return newUser;
-  };
+  const fetchMembers = async (params = {}) => {
+    setIsLoading(true);
+    try {
+      const res: any = await api.get('/members', { params });
+      if (res.success) {
+        setMembers(res.data.members);
 
-  const updateUser = (id: number, data: Partial<User>) => {
-    setUsers(u => u.map(user => user.id === id ? { ...user, ...data } : user));
-  };
+        // Calculate basic stats for now (Ideally backend provides this)
+        const counts = res.data.members.reduce((acc: any, m: Member) => {
+          acc[m.category] = (acc[m.category] || 0) + 1;
+          const isToday = new Date(m.created_at).toDateString() === new Date().toDateString();
+          if (isToday) acc.today++;
+          return acc;
+        }, { student: 0, graduate: 0, individual: 0, organization: 0, today: 0 });
 
-  const deleteUser = (id: number) => {
-    const user = users.find(u => u.id === id);
-    const prefix = user ? getPrefixForCategory(user.category) : '';
-    setUsers(u => u.filter(user => user.id !== id));
-    if (user && prefix) {
-      setCategories(cats => cats.map(c => c.prefix === prefix ? { ...c, count: Math.max(0, c.count - 1) } : c));
+        setStats({
+          total: res.data.total,
+          ...counts
+        });
+      }
+    } catch (error) {
+      console.error('Fetch members error:', error);
+    } finally {
+      setIsLoading(false);
     }
-    if (user) addLog({ action: 'user_deleted', description: `User removed: ${user.fullName} (${user.publicId})`, userId: id, publicId: user.publicId, performedBy: 'admin@registry.com' });
   };
 
-  const sendEmail = (email: Omit<EmailMessage, 'id' | 'sentAt'>) => {
-    const newEmail: EmailMessage = { ...email, id: emails.length + 1, sentAt: new Date().toISOString() };
-    setEmails(e => [newEmail, ...e]);
-    addLog({ action: 'email_sent', description: `Email sent to ${email.recipientName}`, userId: email.recipientId, publicId: null, performedBy: 'admin@registry.com' });
+  const fetchLogs = async () => {
+    try {
+      const res: any = await api.get('/logs');
+      if (res.success) {
+        setLogs(res.data);
+      }
+    } catch (error) {
+      console.error('Fetch logs error:', error);
+    }
   };
 
-  const addLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => {
-    const newLog: ActivityLog = { ...log, id: Date.now(), timestamp: new Date().toISOString() };
-    setLogs(l => [newLog, ...l]);
+  const approveMember = async (id: number) => {
+    try {
+      const res: any = await api.patch(`/members/${id}/approve`);
+      if (res.success) {
+        setMembers(prev => prev.map(m => m.member_id === id ? { ...m, registration_status: 'approved' } : m));
+        fetchLogs();
+      }
+    } catch (error) {
+      console.error('Approve error:', error);
+      throw error;
+    }
   };
 
-  const updateCategory = (id: number, data: Partial<CategoryDef>) => {
-    setCategories(cats => cats.map(c => c.id === id ? { ...c, ...data } : c));
+  const sendEmail = async (data: any) => {
+    try {
+      await api.post('/email/send', data);
+      fetchLogs();
+    } catch (error) {
+      console.error('Send email error:', error);
+      throw error;
+    }
   };
 
-  const deleteCategory = (id: number) => {
-    setCategories(cats => cats.filter(c => c.id !== id));
-  };
+  useEffect(() => {
+    fetchMembers();
+    fetchLogs();
+  }, []);
 
   return (
-    <DataContext.Provider value={{ users, emails, logs, categories, addUser, updateUser, deleteUser, sendEmail, addLog, updateCategory, deleteCategory }}>
+    <DataContext.Provider value={{
+      members, logs, stats, isLoading,
+      fetchMembers, fetchLogs, approveMember, sendEmail
+    }}>
       {children}
     </DataContext.Provider>
   );

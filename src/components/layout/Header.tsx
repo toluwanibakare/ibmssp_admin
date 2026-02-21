@@ -1,36 +1,28 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, ChevronDown, LogOut, User } from 'lucide-react';
+import { Search, Bell, ChevronDown, LogOut, User, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 
-interface HeaderProps {
-  onSearch?: (query: string) => void;
-}
-
-export function Header({ onSearch }: HeaderProps) {
+export function Header() {
   const { user, logout } = useAuth();
-  const { users } = useData();
+  const { members } = useData();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const [searchResults, setSearchResults] = useState<typeof users>([]);
+
+  const searchResults = query.trim().length > 1
+    ? members.filter(m =>
+      m.public_id?.toLowerCase().includes(query.toLowerCase()) ||
+      `${m.first_name} ${m.last_name}`.toLowerCase().includes(query.toLowerCase()) ||
+      m.email?.toLowerCase().includes(query.toLowerCase())
+    ).slice(0, 5)
+    : [];
 
   const handleSearch = (val: string) => {
     setQuery(val);
-    if (val.trim().length > 1) {
-      const q = val.toLowerCase();
-      setSearchResults(users.filter(u =>
-        u.publicId.toLowerCase().includes(q) ||
-        u.fullName.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q)
-      ).slice(0, 5));
-      setShowSearch(true);
-    } else {
-      setShowSearch(false);
-      setSearchResults([]);
-    }
+    setShowSearch(val.trim().length > 1);
   };
 
   return (
@@ -42,23 +34,23 @@ export function Header({ onSearch }: HeaderProps) {
           value={query}
           onChange={e => handleSearch(e.target.value)}
           onBlur={() => setTimeout(() => setShowSearch(false), 200)}
-          placeholder="Search by name, ID or email..."
+          placeholder="Search members by name, ID or email..."
           className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-border bg-muted/40 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-card transition-all"
         />
         {showSearch && searchResults.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-dropdown overflow-hidden z-50">
-            {searchResults.map(u => (
+            {searchResults.map(m => (
               <button
-                key={u.id}
-                onClick={() => { navigate(`/users/${u.id}`); setQuery(''); setShowSearch(false); }}
+                key={m.member_id}
+                onClick={() => { navigate(`/members/${m.member_id}`); setQuery(''); setShowSearch(false); }}
                 className="w-full text-left px-4 py-2.5 hover:bg-accent/50 flex items-center gap-3 transition-colors"
               >
                 <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary shrink-0">
-                  {u.fullName.charAt(0)}
+                  {m.first_name?.charAt(0)}{m.last_name?.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{u.fullName}</p>
-                  <p className="text-xs text-muted-foreground">{u.publicId} · {u.category}</p>
+                  <p className="text-sm font-medium truncate">{m.first_name} {m.last_name}</p>
+                  <p className="text-xs text-muted-foreground">{m.public_id || 'PENDING'} · <span className="capitalize">{m.category}</span></p>
                 </div>
               </button>
             ))}
@@ -72,10 +64,8 @@ export function Header({ onSearch }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 ml-auto">
-        {/* Notifications */}
         <button className="relative p-2 rounded-lg hover:bg-accent transition-colors">
           <Bell size={16} className="text-muted-foreground" />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
         </button>
 
         {/* Profile */}
@@ -85,11 +75,11 @@ export function Header({ onSearch }: HeaderProps) {
             className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors"
           >
             <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-xs font-semibold text-primary-foreground">
-              {user?.avatar}
+              {user?.name?.charAt(0) || 'A'}
             </div>
             <div className="text-left hidden sm:block">
               <p className="text-xs font-medium leading-none">{user?.name}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{user?.role}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 capitalize">{user?.role}</p>
             </div>
             <ChevronDown size={13} className="text-muted-foreground" />
           </button>
@@ -100,8 +90,8 @@ export function Header({ onSearch }: HeaderProps) {
                 onClick={() => { navigate('/settings'); setShowDropdown(false); }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent/50 transition-colors"
               >
-                <User size={14} className="text-muted-foreground" />
-                Profile & Settings
+                <Settings size={14} className="text-muted-foreground" />
+                Settings
               </button>
               <div className="my-1 border-t border-border" />
               <button

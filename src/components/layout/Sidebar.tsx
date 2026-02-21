@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Tag, Mail, ClipboardList, Settings,
-  ChevronLeft, ChevronRight, BarChart3
+  LayoutDashboard, Users, Mail, ClipboardList, Settings,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
-  { to: '/users', icon: Users, label: 'Users' },
-  { to: '/categories', icon: Tag, label: 'Categories' },
+  { to: '/members', icon: Users, label: 'Members Registry' },
   { to: '/email-composer', icon: Mail, label: 'Email Composer' },
-  { to: '/messages', icon: ClipboardList, label: 'Messages' },
-  { to: '/activity-logs', icon: BarChart3, label: 'Activity Logs' },
+  { to: '/activity-logs', icon: ClipboardList, label: 'Activity Logs' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -27,12 +25,12 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-4 py-4 border-b" style={{ borderColor: 'hsl(var(--sidebar-border))' }}>
         <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
-          <span className="text-xs font-bold text-primary-foreground">R</span>
+          <span className="text-xs font-bold text-primary-foreground">IB</span>
         </div>
         {!collapsed && (
           <div className="overflow-hidden">
-            <p className="text-sm font-semibold leading-tight" style={{ color: 'hsl(var(--sidebar-fg))' }}>Registry</p>
-            <p className="text-xs" style={{ color: 'hsl(var(--sidebar-muted))' }}>Admin Panel</p>
+            <p className="text-sm font-semibold leading-tight" style={{ color: 'hsl(var(--sidebar-fg))' }}>IBMSSP ADMIN</p>
+            <p className="text-xs" style={{ color: 'hsl(var(--sidebar-muted))' }}>Registry Panel</p>
           </div>
         )}
       </div>
@@ -45,11 +43,10 @@ export function Sidebar() {
             <NavLink
               key={to}
               to={to}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
-                isActive
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${isActive
                   ? 'bg-primary text-primary-foreground'
                   : 'hover:bg-[hsl(var(--sidebar-hover-bg))] text-[hsl(var(--sidebar-fg))]'
-              }`}
+                }`}
               title={collapsed ? label : undefined}
             >
               <Icon size={16} className="shrink-0" />

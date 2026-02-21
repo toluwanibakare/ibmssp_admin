@@ -1,36 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Send, Users, User, Tag, Mail, Clock, Eye } from 'lucide-react';
+import { Send, Users, User, Tag, Clock } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
-import { Category } from '@/lib/mock-data';
 import { timeAgo } from '@/lib/utils-ui';
 
-type RecipientMode = 'single' | 'multiple' | 'category';
+type RecipientMode = 'single' | 'category';
 
 export default function EmailComposer() {
-  const { users, emails, sendEmail } = useData();
+  const { members, logs, sendEmail } = useData();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const preselectedId = searchParams.get('to');
+  const preEmail = searchParams.get('email') || '';
+  const preName = searchParams.get('name') || '';
 
-  const [mode, setMode] = useState<RecipientMode>('single');
-  const [selectedUserId, setSelectedUserId] = useState<string>(preselectedId || '');
-  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<Category>('Student');
+  const [mode, setMode] = useState<RecipientMode>(preEmail ? 'single' : 'single');
+  const [recipientTo, setRecipientTo] = useState(preEmail);
+  const [recipientName, setRecipientName] = useState(preName);
+  const [selectedCategory, setSelectedCategory] = useState('student');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [previewEmail, setPreviewEmail] = useState<typeof emails[0] | null>(null);
-
-  const selectedUser = users.find(u => u.id === Number(selectedUserId));
-  const categoryUsers = users.filter(u => u.category === selectedCategory);
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (mode === 'single' && !selectedUserId) e.recipient = 'Please select a recipient';
-    if (mode === 'multiple' && selectedUserIds.length === 0) e.recipient = 'Please select at least one recipient';
+    if (mode === 'single' && !recipientTo.trim()) e.recipient = 'Please enter a recipient email';
     if (!subject.trim()) e.subject = 'Subject is required';
     if (!body.trim()) e.body = 'Message body is required';
     setErrors(e);
@@ -40,28 +35,30 @@ export default function EmailComposer() {
   const handleSend = async () => {
     if (!validate()) return;
     setSending(true);
-    await new Promise(r => setTimeout(r, 1200));
-
-    if (mode === 'single' && selectedUser) {
-      sendEmail({ recipientId: selectedUser.id, recipientName: selectedUser.fullName, recipientEmail: selectedUser.email, subject, body, status: 'sent' });
-    } else if (mode === 'multiple') {
-      const names = users.filter(u => selectedUserIds.includes(u.id)).map(u => u.fullName).join(', ');
-      sendEmail({ recipientId: null, recipientName: `Multiple (${selectedUserIds.length})`, recipientEmail: 'multiple', subject, body, status: 'sent' });
-    } else {
-      sendEmail({ recipientId: null, recipientName: `All ${selectedCategory}s (${categoryUsers.length})`, recipientEmail: 'category', subject, body, status: 'sent' });
+    try {
+      if (mode === 'single') {
+        await sendEmail({ to: recipientTo, subject, text: body, html: `<p>${body.replace(/\n/g, '<br>')}</p>` });
+      } else {
+        const catMembers = members.filter(m => m.category === selectedCategory);
+        for (const m of catMembers) {
+          await sendEmail({ to: m.email, subject, text: body, html: `<p>${body.replace(/\n/g, '<br>')}</p>` });
+        }
+      }
+      setSent(true);
+      setTimeout(() => { setSent(false); setSubject(''); setBody(''); setRecipientTo(''); setRecipientName(''); }, 3000);
+    } finally {
+      setSending(false);
     }
-
-    setSending(false);
-    setSent(true);
-    setTimeout(() => { setSent(false); setSubject(''); setBody(''); }, 2500);
   };
+
+  const emailLogs = logs.filter(l => l.action === 'EMAIL_SENT').slice(0, 20);
 
   return (
     <div className="space-y-5">
       <div className="page-header">
         <div>
           <h1 className="page-title">Email Composer</h1>
-          <p className="page-subtitle">Send messages to registry users</p>
+          <p className="page-subtitle">Send messages to IBMSSP members</p>
         </div>
       </div>
 
@@ -69,63 +66,65 @@ export default function EmailComposer() {
         {/* Composer */}
         <div className="lg:col-span-2 space-y-4">
           {sent && (
-            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[hsl(var(--badge-org-bg))] border border-[hsl(var(--badge-org)/0.3)] text-[hsl(var(--badge-org))] text-sm font-medium">
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-success/10 border border-success/30 text-success text-sm font-medium">
               <Send size={14} /> Email sent successfully!
             </div>
           )}
 
           <div className="bg-card rounded-xl border border-border shadow-card p-5 space-y-4">
-            {/* Recipient Mode */}
+            {/* Mode */}
             <div>
               <label className="text-xs font-medium mb-2 block">Send to</label>
               <div className="flex gap-2">
-                {(['single', 'multiple', 'category'] as const).map(m => (
-                  <button key={m} onClick={() => setMode(m)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${mode === m ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-accent/50'}`}>
-                    {m === 'single' ? <User size={12} /> : m === 'multiple' ? <Users size={12} /> : <Tag size={12} />}
-                    {m === 'single' ? 'Single user' : m === 'multiple' ? 'Multiple users' : 'Entire category'}
+                {(['single', 'category'] as const).map(m => (
+                  <button key={m} onClick={() => setMode(m)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${mode === m ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-accent/50'}`}>
+                    {m === 'single' ? <User size={12} /> : <Tag size={12} />}
+                    {m === 'single' ? 'Single member' : 'Entire category'}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Recipient Selector */}
-            <div>
-              {mode === 'single' && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium">Recipient</label>
-                  <select value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)} className={`input-field ${errors.recipient ? 'border-destructive' : ''}`}>
-                    <option value="">— Select a user —</option>
-                    {users.map(u => <option key={u.id} value={u.id}>{u.publicId} – {u.fullName}</option>)}
-                  </select>
-                  {errors.recipient && <p className="text-xs text-destructive">{errors.recipient}</p>}
-                </div>
-              )}
-              {mode === 'multiple' && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium">Recipients ({selectedUserIds.length} selected)</label>
-                  <div className="max-h-40 overflow-y-auto border border-border rounded-lg divide-y divide-border">
-                    {users.map(u => (
-                      <label key={u.id} className="flex items-center gap-2 px-3 py-2 hover:bg-accent/30 cursor-pointer">
-                        <input type="checkbox" checked={selectedUserIds.includes(u.id)} onChange={e => setSelectedUserIds(prev => e.target.checked ? [...prev, u.id] : prev.filter(id => id !== u.id))} className="rounded accent-primary" />
-                        <span className="text-xs font-mono text-primary">{u.publicId}</span>
-                        <span className="text-sm">{u.fullName}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors.recipient && <p className="text-xs text-destructive">{errors.recipient}</p>}
-                </div>
-              )}
-              {mode === 'category' && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium">Category</label>
-                  <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value as Category)} className="input-field">
-                    {(['Student', 'Organization', 'Graduate', 'Trained Auditor', 'Consultant'] as Category[]).map(c => (
-                      <option key={c} value={c}>{c} ({users.filter(u => u.category === c).length} users)</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
+            {/* Recipient */}
+            {mode === 'single' ? (
+              <div className="space-y-2">
+                <label className="text-xs font-medium">Recipient Email</label>
+                <input
+                  type="email"
+                  value={recipientTo}
+                  onChange={e => setRecipientTo(e.target.value)}
+                  placeholder="member@example.com"
+                  className={`input-field ${errors.recipient ? 'border-destructive' : ''}`}
+                />
+                {errors.recipient && <p className="text-xs text-destructive">{errors.recipient}</p>}
+                <label className="text-xs font-medium">Or select a member</label>
+                <select
+                  value={recipientTo}
+                  onChange={e => {
+                    const m = members.find(m => m.email === e.target.value);
+                    setRecipientTo(e.target.value);
+                    if (m) setRecipientName(`${m.first_name} ${m.last_name}`);
+                  }}
+                  className="input-field"
+                >
+                  <option value="">— Pick from list —</option>
+                  {members.map(m => (
+                    <option key={m.member_id} value={m.email}>{m.public_id} – {m.first_name} {m.last_name}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">Category</label>
+                <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} className="input-field">
+                  <option value="student">Students ({members.filter(m => m.category === 'student').length})</option>
+                  <option value="graduate">Graduates ({members.filter(m => m.category === 'graduate').length})</option>
+                  <option value="individual">Individuals ({members.filter(m => m.category === 'individual').length})</option>
+                  <option value="organization">Organizations ({members.filter(m => m.category === 'organization').length})</option>
+                </select>
+              </div>
+            )}
 
             {/* Subject */}
             <div className="space-y-1.5">
@@ -137,7 +136,7 @@ export default function EmailComposer() {
             {/* Body */}
             <div className="space-y-1.5">
               <label className="text-xs font-medium">Message</label>
-              <textarea value={body} onChange={e => setBody(e.target.value)} rows={8} placeholder="Write your message here…" className={`input-field resize-none font-mono text-xs leading-relaxed ${errors.body ? 'border-destructive' : ''}`} />
+              <textarea value={body} onChange={e => setBody(e.target.value)} rows={8} placeholder="Write your message here…" className={`input-field resize-none text-sm leading-relaxed ${errors.body ? 'border-destructive' : ''}`} />
               {errors.body && <p className="text-xs text-destructive">{errors.body}</p>}
             </div>
 
@@ -147,46 +146,24 @@ export default function EmailComposer() {
           </div>
         </div>
 
-        {/* Email History */}
+        {/* Email Log Sidebar */}
         <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border flex items-center gap-2">
             <Clock size={14} className="text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Sent History</h3>
+            <h3 className="text-sm font-semibold">Email Activity</h3>
           </div>
           <div className="divide-y divide-border overflow-y-auto max-h-[500px]">
-            {emails.map(e => (
-              <button key={e.id} onClick={() => setPreviewEmail(previewEmail?.id === e.id ? null : e)} className="w-full text-left px-4 py-3 hover:bg-accent/30 transition-colors">
-                <p className="text-xs font-medium truncate">{e.subject}</p>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">{e.recipientName}</p>
-                <div className="flex items-center justify-between mt-1.5">
-                  <span className="text-xs text-muted-foreground">{timeAgo(e.sentAt)}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${e.status === 'sent' ? 'bg-[hsl(var(--badge-org-bg))] text-[hsl(var(--badge-org))]' : 'bg-destructive/10 text-destructive'}`}>
-                    {e.status}
-                  </span>
-                </div>
-              </button>
+            {emailLogs.length === 0 ? (
+              <p className="text-sm text-muted-foreground px-4 py-6">No emails sent yet.</p>
+            ) : emailLogs.map(log => (
+              <div key={log.id} className="px-4 py-3">
+                <p className="text-xs font-medium truncate">{log.description}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{timeAgo(log.created_at)}</p>
+              </div>
             ))}
           </div>
         </div>
       </div>
-
-      {/* Preview Modal */}
-      {previewEmail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" onClick={() => setPreviewEmail(null)} />
-          <div className="relative bg-card rounded-2xl border border-border shadow-modal w-full max-w-lg p-6 animate-fade-in">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">Email Preview</h3>
-              <button onClick={() => setPreviewEmail(null)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
-            </div>
-            <div className="space-y-2 text-sm mb-4 pb-4 border-b border-border">
-              <div className="flex gap-2"><span className="text-muted-foreground w-16 shrink-0">To:</span><span>{previewEmail.recipientName}</span></div>
-              <div className="flex gap-2"><span className="text-muted-foreground w-16 shrink-0">Subject:</span><span className="font-medium">{previewEmail.subject}</span></div>
-            </div>
-            <div className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: previewEmail.body }} />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
