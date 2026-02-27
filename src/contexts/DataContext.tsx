@@ -43,6 +43,16 @@ export interface SentEmail {
   sent_at: string;
 }
 
+export interface EmailTemplate {
+  id: number;
+  name: string;
+  subject: string;
+  body: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 interface Stats {
   total: number;
   student: number;
@@ -56,13 +66,16 @@ interface DataContextType {
   members: Member[];
   logs: ActivityLog[];
   emails: SentEmail[];
+  templates: EmailTemplate[];
   stats: Stats;
   isLoading: boolean;
   fetchMembers: (params?: any) => Promise<void>;
   fetchLogs: () => Promise<void>;
   fetchEmails: () => Promise<void>;
+  fetchTemplates: () => Promise<void>;
   approveMember: (id: number) => Promise<void>;
   sendEmail: (data: any) => Promise<void>;
+  createTemplate: (data: { name: string; subject: string; body: string }) => Promise<void>;
   getMemberById: (id: number) => Promise<any>;
 }
 
@@ -75,6 +88,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [emails, setEmails] = useState<SentEmail[]>([]);
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [stats, setStats] = useState<Stats>(initialStats);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -131,6 +145,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setEmails((data || []) as unknown as SentEmail[]);
     } catch (error) {
       console.error('Fetch emails error:', error);
+    }
+  }, []);
+
+  const fetchTemplates = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('email_templates')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      setTemplates((data || []) as unknown as EmailTemplate[]);
+    } catch (error) {
+      console.error('Fetch templates error:', error);
     }
   }, []);
 
@@ -204,18 +232,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
     fetchLogs();
   };
 
+  const createTemplate = async (data: { name: string; subject: string; body: string }) => {
+    const { error } = await supabase.from('email_templates').insert({
+      name: data.name,
+      subject: data.subject,
+      body: data.body,
+      created_by: user?.id || null,
+    });
+    if (error) throw error;
+    fetchTemplates();
+  };
+
   useEffect(() => {
     if (user) {
       fetchMembers();
       fetchLogs();
       fetchEmails();
+      fetchTemplates();
     }
-  }, [user, fetchMembers, fetchLogs, fetchEmails]);
+  }, [user, fetchMembers, fetchLogs, fetchEmails, fetchTemplates]);
 
   return (
     <DataContext.Provider value={{
-      members, logs, emails, stats, isLoading,
-      fetchMembers, fetchLogs, fetchEmails, approveMember, sendEmail, getMemberById,
+      members, logs, emails, templates, stats, isLoading,
+      fetchMembers, fetchLogs, fetchEmails, fetchTemplates, approveMember, sendEmail, createTemplate, getMemberById,
     }}>
       {children}
     </DataContext.Provider>

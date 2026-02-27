@@ -1,16 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, ChevronDown, LogOut, Settings } from 'lucide-react';
+import { Search, Bell, ChevronDown, LogOut, Settings, CheckCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
+import { timeAgo } from '@/lib/utils-ui';
+
+const NOTIFICATION_READ_KEY = 'ibmssp_admin_notifications_read';
+
+function readReadNotifications(): number[] {
+  try {
+    const raw = localStorage.getItem(NOTIFICATION_READ_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((id): id is number => typeof id === 'number');
+  } catch {
+    return [];
+  }
+}
 
 export function Header() {
   const { user, logout } = useAuth();
-  const { members } = useData();
+  const { members, logs } = useData();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [readNotificationIds, setReadNotificationIds] = useState<number[]>(() => readReadNotifications());
+  const notificationsRef = useRef<HTMLDivElement | null>(null);
 
   const searchResults = query.trim().length > 1
     ? members.filter(m =>
@@ -19,6 +37,36 @@ export function Header() {
       m.email?.toLowerCase().includes(query.toLowerCase())
     ).slice(0, 5)
     : [];
+
+  const notifications = logs.slice(0, 20);
+  const unreadCount = notifications.filter(log => !readNotificationIds.includes(log.id)).length;
+
+  const persistReadNotifications = (ids: number[]) => {
+    setReadNotificationIds(ids);
+    localStorage.setItem(NOTIFICATION_READ_KEY, JSON.stringify(ids));
+  };
+
+  const markNotificationRead = (id: number) => {
+    if (readNotificationIds.includes(id)) return;
+    persistReadNotifications([...readNotificationIds, id]);
+  };
+
+  const markAllNotificationsRead = () => {
+    const allVisibleIds = Array.from(new Set([...readNotificationIds, ...notifications.map(n => n.id)]));
+    persistReadNotifications(allVisibleIds);
+  };
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!showNotifications) return;
+      if (!notificationsRef.current) return;
+      if (notificationsRef.current.contains(event.target as Node)) return;
+      setShowNotifications(false);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [showNotifications]);
 
   return (
     <header className="h-14 bg-card border-b border-border flex items-center px-5 gap-4 sticky top-0 z-10">
@@ -51,7 +99,69 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-2 ml-auto">
-        <button className="relative p-2 rounded-lg hover:bg-accent transition-colors"><Bell size={16} className="text-muted-foreground" /></button>
+        <div className="relative" ref={notificationsRef}>
+          <button
+            type="button"
+            onClick={() => setShowNotifications(v => !v)}
+            className="relative p-2 rounded-lg hover:bg-accent transition-colors"
+            aria-label="Notifications"
+          >
+            <Bell size={16} className="text-muted-foreground" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-destructive text-[10px] leading-4 text-white text-center font-semibold">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+          {showNotifications && (
+            <div className="absolute right-0 top-full mt-1 w-[min(92vw,380px)] bg-card border border-border rounded-xl shadow-dropdown overflow-hidden z-50">
+              <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">Notifications</p>
+                  <p className="text-xs text-muted-foreground">
+                    {unreadCount} unread of {notifications.length}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={markAllNotificationsRead}
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
+                >
+                  <CheckCheck size={12} /> Mark all read
+                </button>
+              </div>
+              <div className="max-h-[60vh] overflow-y-auto divide-y divide-border">
+                {notifications.length === 0 && (
+                  <div className="px-4 py-6 text-sm text-center text-muted-foreground">No notifications yet</div>
+                )}
+                {notifications.map(log => {
+                  const isRead = readNotificationIds.includes(log.id);
+                  return (
+                    <button
+                      key={log.id}
+                      type="button"
+                      onClick={() => markNotificationRead(log.id)}
+                      className="w-full text-left px-4 py-3 hover:bg-accent/40 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${isRead ? 'bg-muted-foreground/50' : 'bg-primary'}`} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm leading-snug break-words [overflow-wrap:anywhere]">{log.description}</p>
+                            <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded shrink-0 ${isRead ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'}`}>
+                              {isRead ? 'Read' : 'Unread'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">{timeAgo(log.created_at)}</p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
         <div className="relative">
           <button onClick={() => setShowDropdown(d => !d)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors">
             <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-xs font-semibold text-primary-foreground">{user?.name?.charAt(0) || 'A'}</div>

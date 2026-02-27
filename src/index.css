@@ -103,7 +103,7 @@
 @layer components {
   /* Stat card */
   .stat-card {
-    @apply bg-card rounded-xl p-5 border border-border;
+    @apply bg-card rounded-xl p-4 sm:p-5 border border-border min-w-0 overflow-hidden;
     box-shadow: var(--shadow-card);
   }
 
@@ -139,13 +139,13 @@
 
   /* Page header */
   .page-header {
-    @apply flex items-center justify-between mb-6;
+    @apply flex flex-col items-start justify-between gap-3 mb-6 sm:flex-row sm:items-center;
   }
   .page-title {
     @apply text-xl font-semibold tracking-tight text-foreground;
   }
   .page-subtitle {
-    @apply text-sm text-muted-foreground mt-0.5;
+    @apply text-sm text-muted-foreground mt-0.5 break-words;
   }
 
   /* Input style override */

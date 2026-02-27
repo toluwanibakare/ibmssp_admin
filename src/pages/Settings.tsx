@@ -1,9 +1,58 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, Globe, Key, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
+const WP_INTEGRATION_SETTINGS_KEY = 'ibmssp_admin_wp_integration_settings';
+
+const defaultIntegrationSettings = {
+  webhookUrl: 'https://admin.ibmssp.org.ng/api/register',
+  requiredHeaderName: 'x-api-key',
+  requiredHeaderValue: 'ibmssp_admin_secret_key_2025',
+};
+
 export default function Settings() {
   const { user, logout } = useAuth();
+  const [webhookUrl, setWebhookUrl] = useState(defaultIntegrationSettings.webhookUrl);
+  const [requiredHeaderName, setRequiredHeaderName] = useState(defaultIntegrationSettings.requiredHeaderName);
+  const [requiredHeaderValue, setRequiredHeaderValue] = useState(defaultIntegrationSettings.requiredHeaderValue);
+  const [saveMessage, setSaveMessage] = useState('');
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(WP_INTEGRATION_SETTINGS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<typeof defaultIntegrationSettings>;
+      if (typeof parsed.webhookUrl === 'string') setWebhookUrl(parsed.webhookUrl);
+      if (typeof parsed.requiredHeaderName === 'string') setRequiredHeaderName(parsed.requiredHeaderName);
+      if (typeof parsed.requiredHeaderValue === 'string') setRequiredHeaderValue(parsed.requiredHeaderValue);
+    } catch {
+      // Ignore malformed local settings and fall back to defaults
+    }
+  }, []);
+
+  const saveIntegrationSettings = () => {
+    const payload = {
+      webhookUrl: webhookUrl.trim() || defaultIntegrationSettings.webhookUrl,
+      requiredHeaderName: requiredHeaderName.trim() || defaultIntegrationSettings.requiredHeaderName,
+      requiredHeaderValue: requiredHeaderValue.trim() || defaultIntegrationSettings.requiredHeaderValue,
+    };
+
+    localStorage.setItem(WP_INTEGRATION_SETTINGS_KEY, JSON.stringify(payload));
+    setWebhookUrl(payload.webhookUrl);
+    setRequiredHeaderName(payload.requiredHeaderName);
+    setRequiredHeaderValue(payload.requiredHeaderValue);
+    setSaveMessage('WordPress integration settings saved.');
+    window.setTimeout(() => setSaveMessage(''), 2500);
+  };
+
+  const resetIntegrationSettings = () => {
+    setWebhookUrl(defaultIntegrationSettings.webhookUrl);
+    setRequiredHeaderName(defaultIntegrationSettings.requiredHeaderName);
+    setRequiredHeaderValue(defaultIntegrationSettings.requiredHeaderValue);
+    localStorage.setItem(WP_INTEGRATION_SETTINGS_KEY, JSON.stringify(defaultIntegrationSettings));
+    setSaveMessage('WordPress integration settings reset to defaults.');
+    window.setTimeout(() => setSaveMessage(''), 2500);
+  };
 
   return (
     <div className="space-y-5 max-w-2xl">
@@ -17,7 +66,7 @@ export default function Settings() {
           <User size={15} className="text-muted-foreground" />
           <h2 className="text-sm font-semibold">Account Profile</h2>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-xs font-medium">Full Name</label>
             <input defaultValue={user?.name || ''} className="input-field" readOnly />
@@ -38,7 +87,7 @@ export default function Settings() {
           <Globe size={15} className="text-muted-foreground" />
           <h2 className="text-sm font-semibold">System Information</h2>
         </div>
-        <div className="grid grid-cols-2 gap-y-3 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4 text-sm">
           {[
             ['Application', 'IBMSSP ADMIN Registry'],
             ['Version', '1.0.0'],
@@ -61,17 +110,68 @@ export default function Settings() {
           <Key size={15} className="text-muted-foreground" />
           <h2 className="text-sm font-semibold">WordPress Integration</h2>
         </div>
-        <div className="space-y-3 text-sm">
-          <p className="text-muted-foreground text-xs">Configure your WordPress Contact Form 7 webhook to submit to:</p>
-          <div className="font-mono text-xs bg-muted/40 px-3 py-2 rounded-lg break-all text-primary select-all">
-            {`https://ukjmduimszrydwoyrksi.supabase.co/functions/v1/register`}
+        <div className="space-y-4 text-sm">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium">Webhook URL</label>
+            <input
+              value={webhookUrl}
+              onChange={e => setWebhookUrl(e.target.value)}
+              className="input-field font-mono text-xs"
+              placeholder="https://your-domain.com/api/register"
+            />
           </div>
-          <div className="space-y-1">
-            <p className="text-xs font-medium">Required Header:</p>
-            <div className="font-mono text-xs bg-muted/40 px-3 py-2 rounded-lg text-muted-foreground">
-              x-api-key: your_registration_api_key
+
+          <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium">Required Header Name</label>
+              <input
+                value={requiredHeaderName}
+                onChange={e => setRequiredHeaderName(e.target.value)}
+                className="input-field font-mono text-xs"
+                placeholder="x-api-key"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium">Required Header Value</label>
+              <input
+                value={requiredHeaderValue}
+                onChange={e => setRequiredHeaderValue(e.target.value)}
+                className="input-field font-mono text-xs"
+                placeholder="your_registration_api_key"
+              />
             </div>
           </div>
+
+          <div className="space-y-1">
+            <p className="text-xs font-medium">Header Preview:</p>
+            <div className="font-mono text-xs bg-muted/40 px-3 py-2 rounded-lg text-muted-foreground break-all">
+              {(requiredHeaderName || 'x-api-key')}: {(requiredHeaderValue || 'your_registration_api_key')}
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              type="button"
+              onClick={saveIntegrationSettings}
+              className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Save Integration Settings
+            </button>
+            <button
+              type="button"
+              onClick={resetIntegrationSettings}
+              className="px-3 py-2 rounded-lg border border-border bg-card text-xs font-medium hover:bg-accent/40 transition-colors"
+            >
+              Reset Defaults
+            </button>
+          </div>
+
+          {saveMessage && (
+            <div className="text-xs text-success bg-success/10 border border-success/20 rounded-lg px-3 py-2">
+              {saveMessage}
+            </div>
+          )}
+
           <p className="text-xs text-muted-foreground">Method: <span className="font-semibold text-foreground">POST</span> &nbsp;|&nbsp; Content-Type: <span className="font-semibold text-foreground">application/json</span></p>
         </div>
       </div>

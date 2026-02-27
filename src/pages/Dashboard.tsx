@@ -9,14 +9,14 @@ function StatCard({ label, value, icon: Icon, sub, color }: {
   sub?: string; color: string;
 }) {
   return (
-    <div className="stat-card flex items-start gap-4">
+    <div className="stat-card flex items-start gap-3 sm:gap-4 min-w-0 h-full">
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
         <Icon size={18} />
       </div>
-      <div>
-        <p className="text-2xl font-semibold tracking-tight">{value}</p>
-        <p className="text-sm text-muted-foreground">{label}</p>
-        {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+      <div className="min-w-0 flex-1">
+        <p className="text-xl sm:text-2xl font-semibold tracking-tight leading-tight break-words [overflow-wrap:anywhere]">{value}</p>
+        <p className="text-sm text-muted-foreground leading-snug break-words [overflow-wrap:anywhere]">{label}</p>
+        {sub && <p className="text-xs text-muted-foreground mt-0.5 leading-snug break-words [overflow-wrap:anywhere]">{sub}</p>}
       </div>
     </div>
   );
@@ -32,19 +32,19 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="page-header">
+      <div className="page-header flex-col items-start gap-3 sm:flex-row sm:items-center">
         <div>
           <h1 className="page-title">Dashboard</h1>
           <p className="page-subtitle">IBMSSP ADMIN Registry overview and recent activity</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => navigate('/email-composer')} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium hover:bg-accent/50 transition-colors">
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button onClick={() => navigate('/email-composer')} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium hover:bg-accent/50 transition-colors w-full sm:w-auto">
             <Mail size={14} /> Send Announcement
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
         <StatCard label="Total Members" value={stats.total} icon={Users} color="bg-primary/10 text-primary" />
         <StatCard label="Students" value={stats.student} icon={GraduationCap} color="bg-[hsl(var(--badge-std-bg))] text-[hsl(var(--badge-std))]" />
         <StatCard label="Graduates" value={stats.graduate} icon={UserCheck} color="bg-[hsl(var(--badge-grd-bg))] text-[hsl(var(--badge-grd))]" />
