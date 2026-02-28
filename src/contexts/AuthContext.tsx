@@ -76,55 +76,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
+    const applySession = async (session: { user: User } | null) => {
+      if (!isMounted) return;
+
+      if (!session?.user) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const prefs = readAuthPrefs();
+      const maxAge = prefs?.rememberMe ? REMEMBER_ME_TTL_MS : SESSION_TTL_MS;
+      const isExpired = prefs ? (Date.now() - prefs.lastLoginAt > maxAge) : false;
+
+      if (isExpired) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      if (prefs) {
+        writeAuthPrefs({ ...prefs, lastLoginAt: Date.now() });
+      }
+
+      setIsLoading(true);
+      try {
+        await loadProfile(session.user);
+      } catch {
+        setUser(null);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_OUT') {
           clearAuthPrefs();
         }
-
-        if (session?.user) {
-          const prefs = readAuthPrefs();
-          const maxAge = prefs?.rememberMe ? REMEMBER_ME_TTL_MS : SESSION_TTL_MS;
-          const isExpired = prefs ? (Date.now() - prefs.lastLoginAt > maxAge) : false;
-
-          if (isExpired) {
-            await supabase.auth.signOut();
-            setUser(null);
-            setIsLoading(false);
-            return;
-          }
-
-          if (prefs) {
-            writeAuthPrefs({ ...prefs, lastLoginAt: Date.now() });
-          }
-
-          // Use setTimeout to avoid potential deadlocks with Supabase client
-          setTimeout(() => loadProfile(session.user), 0);
-        } else {
-          setUser(null);
-        }
-        setIsLoading(false);
+        await applySession(session as any);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const prefs = readAuthPrefs();
-        const maxAge = prefs?.rememberMe ? REMEMBER_ME_TTL_MS : SESSION_TTL_MS;
-        const isExpired = prefs ? (Date.now() - prefs.lastLoginAt > maxAge) : false;
+    supabase.auth.getSession().then(({ data: { session } }) => applySession(session as any));
 
-        if (isExpired) {
-          supabase.auth.signOut();
-          setUser(null);
-        } else {
-          if (prefs) writeAuthPrefs({ ...prefs, lastLoginAt: Date.now() });
-          loadProfile(session.user);
-        }
-      }
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (

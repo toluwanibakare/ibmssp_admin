@@ -22,7 +22,28 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { category, first_name, last_name, other_name, gender, date_of_birth, email, phone, address, state, country } = body;
+
+    const splitName = (fullName?: string) => {
+      const cleaned = (fullName || '').trim();
+      if (!cleaned) return { first_name: '', last_name: '' };
+      const parts = cleaned.split(/\s+/);
+      const first_name = parts.shift() || '';
+      const last_name = parts.length ? parts.join(' ') : '';
+      return { first_name, last_name };
+    };
+
+    const nameFallback = splitName(body.full_name || body['full-name']);
+    const category = body.category;
+    const first_name = body.first_name || nameFallback.first_name;
+    const last_name = body.last_name || nameFallback.last_name;
+    const other_name = body.other_name;
+    const gender = body.gender;
+    const date_of_birth = body.date_of_birth;
+    const email = body.email || body['email-address'] || body['your-email'];
+    const phone = body.phone || body['tel-290'] || body['your-phone'] || body['tel-766'];
+    const address = body.address;
+    const state = body.state;
+    const country = body.country;
 
     if (!category || !first_name || !last_name || !email || !phone) {
       return new Response(JSON.stringify({ success: false, message: "Missing required fields" }), {
@@ -60,28 +81,28 @@ Deno.serve(async (req) => {
     // Insert category-specific details
     const memberId = member.member_id;
 
-    if (category === "student" && body.institution_name) {
+    if (category === "student" && (body.institution_name || body['your-school'])) {
       await supabase.from("student_details").insert({
         member_id: memberId,
-        institution_name: body.institution_name,
-        course_of_study: body.course_of_study || "",
+        institution_name: body.institution_name || body['your-school'] || "",
+        course_of_study: body.course_of_study || body['your-course'] || "",
         level: body.level || null,
         matric_number: body.matric_number || null,
         expected_graduation_year: body.expected_graduation_year || null,
       });
-    } else if (category === "graduate" && body.institution) {
+    } else if (category === "graduate" && (body.institution || body.institution_name || body['school-name'])) {
       await supabase.from("graduate_details").insert({
         member_id: memberId,
-        institution: body.institution,
-        qualification: body.qualification || "",
-        graduation_year: body.graduation_year || new Date().getFullYear(),
+        institution: body.institution || body.institution_name || body['school-name'],
+        qualification: body.qualification || body.degree || "",
+        graduation_year: body.graduation_year || body['graduation-year'] || new Date().getFullYear(),
         study_duration: body.study_duration || null,
         ny_sc_status: body.ny_sc_status || null,
       });
-    } else if (category === "individual" && body.profession) {
+    } else if (category === "individual" && (body.profession || body.professional_type || body['radio-846'])) {
       await supabase.from("professional_details").insert({
         member_id: memberId,
-        profession: body.profession,
+        profession: body.profession || body.professional_type || body['radio-846'],
         specialization: body.specialization || null,
         years_of_experience: body.years_of_experience || null,
         current_company: body.current_company || null,
