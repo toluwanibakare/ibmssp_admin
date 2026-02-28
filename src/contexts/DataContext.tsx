@@ -150,17 +150,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchTemplates = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('email_templates')
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      setTemplates((data || []) as unknown as EmailTemplate[]);
-    } catch (error) {
-      console.error('Fetch templates error:', error);
-    }
+    // email_templates table not yet created - stub for future use
+    setTemplates([]);
   }, []);
 
   const getMemberById = async (id: number) => {
