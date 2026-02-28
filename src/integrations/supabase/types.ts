@@ -49,36 +49,6 @@ export type Database = {
           },
         ]
       }
-      email_templates: {
-        Row: {
-          body: string | null
-          created_at: string
-          created_by: string | null
-          id: number
-          name: string
-          subject: string
-          updated_at: string
-        }
-        Insert: {
-          body?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: never
-          name: string
-          subject: string
-          updated_at?: string
-        }
-        Update: {
-          body?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: never
-          name?: string
-          subject?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       graduate_details: {
         Row: {
           certificate_file: string | null
