@@ -150,17 +150,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchTemplates = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('email_templates')
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      setTemplates((data || []) as unknown as EmailTemplate[]);
-    } catch (error) {
-      console.error('Fetch templates error:', error);
-    }
+    // email_templates table not yet created - stub for future use
+    setTemplates([]);
   }, []);
 
   const getMemberById = async (id: number) => {
@@ -327,14 +318,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const createTemplate = async (data: { name: string; subject: string; body: string }) => {
-    const { error } = await supabase.from('email_templates').insert({
-      name: data.name,
-      subject: data.subject,
-      body: data.body,
-      created_by: user?.id || null,
-    });
-    if (error) throw error;
-    fetchTemplates();
+    // email_templates table not yet created - stub for future use
+    console.warn('email_templates table not available yet');
   };
 
   useEffect(() => {

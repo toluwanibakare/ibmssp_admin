@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const WP_INTEGRATION_SETTINGS_KEY = 'ibmssp_admin_wp_integration_settings';
 
 const defaultIntegrationSettings = {
-  webhookUrl: 'https://admin.ibmssp.org.ng/api/register',
+  webhookUrl: `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID || 'ukjmduimszrydwoyrksi'}.supabase.co/functions/v1/register`,
   requiredHeaderName: 'x-api-key',
   requiredHeaderValue: 'ibmssp_admin_secret_key_2025',
 };
