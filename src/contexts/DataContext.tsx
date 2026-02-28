@@ -318,14 +318,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const createTemplate = async (data: { name: string; subject: string; body: string }) => {
-    const { error } = await supabase.from('email_templates').insert({
-      name: data.name,
-      subject: data.subject,
-      body: data.body,
-      created_by: user?.id || null,
-    });
-    if (error) throw error;
-    fetchTemplates();
+    // email_templates table not yet created - stub for future use
+    console.warn('email_templates table not available yet');
   };
 
   useEffect(() => {
