@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, ChevronDown, LogOut, Settings, CheckCheck } from 'lucide-react';
+import { Search, Bell, ChevronDown, LogOut, Settings, CheckCheck, Menu } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import { timeAgo } from '@/lib/utils-ui';
@@ -19,7 +19,7 @@ function readReadNotifications(): number[] {
   }
 }
 
-export function Header() {
+export function Header({ onOpenSidebar }: { onOpenSidebar: () => void }) {
   const { user, logout } = useAuth();
   const { members, logs } = useData();
   const navigate = useNavigate();
@@ -69,7 +69,15 @@ export function Header() {
   }, [showNotifications]);
 
   return (
-    <header className="h-14 bg-card border-b border-border flex items-center px-5 gap-4 sticky top-0 z-10">
+    <header className="h-14 bg-card border-b border-border flex items-center px-4 sm:px-5 gap-3 sticky top-0 z-10">
+      <button
+        type="button"
+        onClick={onOpenSidebar}
+        className="md:hidden p-2 -ml-1 rounded-lg hover:bg-accent transition-colors"
+        aria-label="Open menu"
+      >
+        <Menu size={16} className="text-muted-foreground" />
+      </button>
       <div className="flex-1 max-w-md relative">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input value={query}

@@ -177,13 +177,15 @@ export default function Settings() {
       </div>
 
       <div className="bg-card rounded-xl border border-destructive/20 shadow-card p-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-destructive">Sign Out</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Sign out of the IBMSSP admin panel</p>
           </div>
-          <button onClick={logout}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors">
+          <button
+            onClick={logout}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors sm:self-auto self-start"
+          >
             <LogOut size={13} /> Sign Out
           </button>
         </div>

@@ -9,15 +9,7 @@ const initDB = async () => {
         await sequelize.sync({ force: true }); // WARNING: This drops existing tables
         console.log('Database initialized successfully with all tables.');
 
-        // Seed default admin user
-        const { User } = require('../models');
-        await User.create({
-            name: 'IBMSSP ADMIN',
-            email: 'info@ibmssp.org.ng',
-            password: 'Master@123',
-            role: 'admin'
-        });
-        console.log('Default admin user created: info@ibmssp.org.ng / Master@123');
+        // No demo/fake users are created here. All users should come from real data sources.
 
         process.exit(0);
     } catch (error) {

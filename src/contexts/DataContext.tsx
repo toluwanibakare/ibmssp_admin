@@ -74,6 +74,7 @@ interface DataContextType {
   fetchEmails: () => Promise<void>;
   fetchTemplates: () => Promise<void>;
   approveMember: (id: number) => Promise<void>;
+  createMember: (data: any) => Promise<Member>;
   sendEmail: (data: any) => Promise<void>;
   createTemplate: (data: { name: string; subject: string; body: string }) => Promise<void>;
   getMemberById: (id: number) => Promise<any>;
@@ -210,6 +211,99 @@ export function DataProvider({ children }: { children: ReactNode }) {
     fetchLogs();
   };
 
+  const createMember = async (data: any) => {
+    const { data: member, error } = await supabase
+      .from('members')
+      .insert([{
+        category: data.category,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        other_name: data.other_name || null,
+        gender: data.gender || null,
+        date_of_birth: data.date_of_birth || null,
+        email: data.email,
+        phone: data.phone,
+        address: data.address || null,
+        state: data.state || null,
+        country: data.country || null,
+        registration_status: data.registration_status || 'pending',
+        payment_status: data.payment_status || 'unpaid',
+      }])
+      .select('*')
+      .single();
+    if (error) throw error;
+
+    try {
+      if (data.category === 'student') {
+        const { error: dError } = await supabase.from('student_details').insert([{
+          member_id: member.member_id,
+          institution_name: data.institution_name,
+          course_of_study: data.course_of_study,
+          level: data.level || null,
+          matric_number: data.matric_number || null,
+          expected_graduation_year: data.expected_graduation_year ? Number(data.expected_graduation_year) : null,
+          student_id_card_file: data.student_id_card_file || null,
+        }]);
+        if (dError) throw dError;
+      } else if (data.category === 'graduate') {
+        const { error: dError } = await supabase.from('graduate_details').insert([{
+          member_id: member.member_id,
+          institution: data.institution,
+          qualification: data.qualification,
+          graduation_year: data.graduation_year ? Number(data.graduation_year) : null,
+          study_duration: data.study_duration || null,
+          ny_sc_status: data.ny_sc_status || null,
+          certificate_file: data.certificate_file || null,
+          cv_file: data.cv_file || null,
+        }]);
+        if (dError) throw dError;
+      } else if (data.category === 'individual') {
+        const { error: dError } = await supabase.from('professional_details').insert([{
+          member_id: member.member_id,
+          profession: data.profession,
+          specialization: data.specialization || null,
+          years_of_experience: data.years_of_experience ? Number(data.years_of_experience) : null,
+          current_company: data.current_company || null,
+          professional_certifications: data.professional_certifications || null,
+          license_number: data.license_number || null,
+          cv_file: data.cv_file || null,
+        }]);
+        if (dError) throw dError;
+      } else if (data.category === 'organization') {
+        const { error: dError } = await supabase.from('organization_details').insert([{
+          member_id: member.member_id,
+          organization_name: data.organization_name,
+          rc_number: data.rc_number || null,
+          organization_type: data.organization_type || null,
+          industry: data.industry || null,
+          iso_start_year: data.iso_start_year || null,
+          contact_person: data.contact_person || null,
+          contact_person_role: data.contact_person_role || null,
+          company_email: data.company_email,
+          company_phone: data.company_phone,
+          company_address: data.company_address || null,
+          number_of_staff: data.number_of_staff ? Number(data.number_of_staff) : null,
+          company_certificate_file: data.company_certificate_file || null,
+        }]);
+        if (dError) throw dError;
+      }
+
+      await supabase.from('activity_logs').insert({
+        member_id: member.member_id,
+        action: 'ADMIN_CREATE',
+        description: `Member added by admin: ${member.first_name} ${member.last_name}`,
+        performed_by: user?.id || null,
+      });
+
+      await fetchMembers();
+      await fetchLogs();
+      return member as Member;
+    } catch (detailError) {
+      await supabase.from('members').delete().eq('member_id', member.member_id);
+      throw detailError;
+    }
+  };
+
   const sendEmail = async (data: any) => {
     // Record the email in the database
     await supabase.from('sent_emails').insert({
@@ -255,7 +349,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   return (
     <DataContext.Provider value={{
       members, logs, emails, templates, stats, isLoading,
-      fetchMembers, fetchLogs, fetchEmails, fetchTemplates, approveMember, sendEmail, createTemplate, getMemberById,
+      fetchMembers, fetchLogs, fetchEmails, fetchTemplates, approveMember, createMember, sendEmail, createTemplate, getMemberById,
     }}>
       {children}
     </DataContext.Provider>
