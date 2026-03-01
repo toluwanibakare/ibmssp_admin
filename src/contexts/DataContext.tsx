@@ -78,6 +78,7 @@ interface DataContextType {
   sendEmail: (data: any) => Promise<void>;
   createTemplate: (data: { name: string; subject: string; body: string }) => Promise<void>;
   getMemberById: (id: number) => Promise<any>;
+  updateMember: (id: number, data: any) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -295,6 +296,40 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateMember = async (id: number, data: any) => {
+    // Update base member fields
+    const baseFields: any = {};
+    const baseKeys = ['first_name', 'last_name', 'other_name', 'gender', 'date_of_birth', 'email', 'phone', 'address', 'state', 'country', 'registration_status', 'payment_status'];
+    baseKeys.forEach(k => { if (data[k] !== undefined) baseFields[k] = data[k] || null; });
+    // Ensure required fields aren't nulled
+    ['first_name', 'last_name', 'email', 'phone'].forEach(k => { if (data[k]) baseFields[k] = data[k]; });
+
+    const { error } = await supabase.from('members').update(baseFields).eq('member_id', id);
+    if (error) throw error;
+
+    // Update category-specific details
+    const cat = data.category;
+    if (cat === 'student' && data.studentDetails) {
+      await supabase.from('student_details').update(data.studentDetails).eq('member_id', id);
+    } else if (cat === 'graduate' && data.graduateDetails) {
+      await supabase.from('graduate_details').update(data.graduateDetails).eq('member_id', id);
+    } else if (cat === 'individual' && data.professionalDetails) {
+      await supabase.from('professional_details').update(data.professionalDetails).eq('member_id', id);
+    } else if (cat === 'organization' && data.organizationDetails) {
+      await supabase.from('organization_details').update(data.organizationDetails).eq('member_id', id);
+    }
+
+    await supabase.from('activity_logs').insert({
+      member_id: id,
+      action: 'MEMBER_UPDATED',
+      description: `Member details updated: ${data.first_name} ${data.last_name}`,
+      performed_by: user?.id || null,
+    });
+
+    await fetchMembers();
+    await fetchLogs();
+  };
+
   const sendEmail = async (data: any) => {
     // Record the email in the database
     await supabase.from('sent_emails').insert({
@@ -334,7 +369,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   return (
     <DataContext.Provider value={{
       members, logs, emails, templates, stats, isLoading,
-      fetchMembers, fetchLogs, fetchEmails, fetchTemplates, approveMember, createMember, sendEmail, createTemplate, getMemberById,
+      fetchMembers, fetchLogs, fetchEmails, fetchTemplates, approveMember, createMember, sendEmail, createTemplate, getMemberById, updateMember,
     }}>
       {children}
     </DataContext.Provider>
