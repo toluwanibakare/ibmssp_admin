@@ -78,6 +78,7 @@ interface DataContextType {
   sendEmail: (data: any) => Promise<void>;
   createTemplate: (data: { name: string; subject: string; body: string }) => Promise<void>;
   getMemberById: (id: number) => Promise<any>;
+  updateMember: (id: number, data: any) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
