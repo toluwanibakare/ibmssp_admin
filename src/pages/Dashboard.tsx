@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, GraduationCap, Building2, User, UserCheck, Mail, ArrowUpRight, TrendingUp } from 'lucide-react';
+import { Users, GraduationCap, Building2, User, UserCheck, Mail, ArrowUpRight, TrendingUp, RefreshCw } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { CategoryBadge, timeAgo } from '@/lib/utils-ui';
 
@@ -23,7 +23,17 @@ function StatCard({ label, value, icon: Icon, sub, color }: {
 }
 
 export default function Dashboard() {
-  const { members, logs, stats, isLoading } = useData();
+  const { members, logs, stats, isLoading, fetchMembers, fetchLogs } = useData();
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchMembers(), fetchLogs()]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const navigate = useNavigate();
 
   if (isLoading && members.length === 0) {
@@ -38,6 +48,9 @@ export default function Dashboard() {
           <p className="page-subtitle">IBMSSP ADMIN Registry overview and recent activity</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
+          <button onClick={handleRefresh} disabled={refreshing} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium hover:bg-accent/50 transition-colors">
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /> Refresh
+          </button>
           <button onClick={() => navigate('/email-composer')} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium hover:bg-accent/50 transition-colors w-full sm:w-auto">
             <Mail size={14} /> Send Announcement
           </button>

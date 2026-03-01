@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Eye, CheckCircle, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
+import { Search, Filter, Eye, CheckCircle, ChevronLeft, ChevronRight, Plus, X, RefreshCw } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { CategoryBadge, StatusBadge, formatDate } from '@/lib/utils-ui';
 
@@ -16,6 +16,16 @@ export default function Members() {
   const [showAdd, setShowAdd] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchMembers();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const initialForm = {
     category: 'student',
@@ -133,11 +143,14 @@ export default function Members() {
 
   return (
     <div className="space-y-5 pb-28">
-      <div className="page-header">
+      <div className="page-header flex-col items-start gap-3 sm:flex-row sm:items-center">
         <div>
           <h1 className="page-title">Members Registry</h1>
           <p className="page-subtitle">{stats.total} total registered members</p>
         </div>
+        <button onClick={handleRefresh} disabled={refreshing} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium hover:bg-accent/50 transition-colors">
+          <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /> Refresh
+        </button>
       </div>
 
       <div className="flex flex-wrap gap-3">
