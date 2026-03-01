@@ -1,7 +1,8 @@
 import React from 'react';
-import { UserPlus, UserCheck, Mail, LogIn } from 'lucide-react';
+import { UserPlus, UserCheck, Mail, LogIn, Trash2 } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { formatDateTime } from '@/lib/utils-ui';
+import { useAuth } from '@/contexts/AuthContext';
 
 function ActionIcon({ action }: { action: string }) {
   const map: Record<string, { icon: React.ElementType; color: string }> = {
@@ -20,15 +21,41 @@ function ActionIcon({ action }: { action: string }) {
 }
 
 export default function ActivityLogs() {
-  const { logs } = useData();
+  const { logs, clearActivityLogs } = useData();
+  const { user } = useAuth();
+  const [isClearing, setIsClearing] = React.useState(false);
+  const isAdmin = user?.role === 'admin';
+
+  const handleClearLogs = async () => {
+    const ok = window.confirm('Clear all activity logs? This cannot be undone.');
+    if (!ok) return;
+
+    setIsClearing(true);
+    try {
+      await clearActivityLogs();
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
-      <div className="page-header">
+      <div className="page-header flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="page-title">Activity Logs</h1>
           <p className="page-subtitle">Chronological audit trail of all IBMSSP admin actions</p>
         </div>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={handleClearLogs}
+            disabled={isClearing || logs.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-destructive/40 text-destructive text-sm font-medium hover:bg-destructive/10 disabled:opacity-60"
+          >
+            <Trash2 size={14} />
+            {isClearing ? 'Clearing...' : 'Clear Logs'}
+          </button>
+        )}
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden">

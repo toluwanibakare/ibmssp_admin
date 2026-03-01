@@ -22,6 +22,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 const AUTH_PREFS_KEY = 'ibmssp_admin_auth_prefs';
 const REMEMBER_ME_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 const SESSION_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
+const AUTH_BOOT_TIMEOUT_MS = 12000;
 
 type AuthPrefs = {
   rememberMe: boolean;
@@ -77,6 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
+    const bootTimeout = window.setTimeout(() => {
+      if (isMounted) setIsLoading(false);
+    }, AUTH_BOOT_TIMEOUT_MS);
 
     const applySession = async (session: { user: User } | null) => {
       if (!isMounted) return;
@@ -117,14 +121,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === 'SIGNED_OUT') {
           clearAuthPrefs();
         }
-        await applySession(session as any);
+        // Avoid blocking auth event processing; apply session in the background.
+        void applySession((session ? { user: session.user } : null));
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => applySession(session as any));
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => applySession(session ? { user: session.user } : null))
+      .catch(() => {
+        if (isMounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
+      });
 
     return () => {
       isMounted = false;
+      window.clearTimeout(bootTimeout);
       subscription.unsubscribe();
     };
   }, []);

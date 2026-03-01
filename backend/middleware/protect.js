@@ -1,5 +1,11 @@
 const jwt = require('jsonwebtoken');
 
+const hasValidApiKey = (req) => {
+    const apiKey = req.headers['x-api-key'];
+    const validApiKey = process.env.API_KEY;
+    return !!apiKey && !!validApiKey && apiKey === validApiKey;
+};
+
 const protect = (req, res, next) => {
     let token;
 
@@ -31,4 +37,11 @@ const protect = (req, res, next) => {
     }
 };
 
-module.exports = { protect };
+const protectOrApiKey = (req, res, next) => {
+    if (hasValidApiKey(req)) {
+        return next();
+    }
+    return protect(req, res, next);
+};
+
+module.exports = { protect, protectOrApiKey };

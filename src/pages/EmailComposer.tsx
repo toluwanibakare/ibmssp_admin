@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Send, User, Tag, Clock } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
@@ -8,13 +8,12 @@ import type { Member } from '@/contexts/DataContext';
 
 type RecipientMode = 'single' | 'category';
 type ComposerField = 'subject' | 'body';
+const DRAFT_STORAGE_KEY = 'ibmssp_email_draft';
 
 const MERGE_FIELDS = [
   { label: 'User ID', token: '{{user_id}}' },
   { label: 'Member ID', token: '{{member_id}}' },
   { label: 'Name', token: '{{name}}' },
-  { label: 'First Name', token: '{{first_name}}' },
-  { label: 'Last Name', token: '{{last_name}}' },
   { label: 'Email', token: '{{email}}' },
   { label: 'Phone', token: '{{phone}}' },
   { label: 'Category', token: '{{category}}' },
@@ -86,12 +85,31 @@ export default function EmailComposer() {
   const [templateName, setTemplateName] = useState('');
   const [templateError, setTemplateError] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [sendError, setSendError] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [activeField, setActiveField] = useState<ComposerField>('body');
 
   const subjectRef = useRef<HTMLInputElement | null>(null);
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return;
+
+    try {
+      const draft = JSON.parse(raw) as { to?: string; name?: string; subject?: string; body?: string };
+      setMode('single');
+      setRecipientTo(draft.to || '');
+      setRecipientName(draft.name || '');
+      setSubject(draft.subject || '');
+      setBody(draft.body || '');
+    } catch (error) {
+      console.error('Invalid saved email draft:', error);
+    } finally {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    }
+  }, []);
 
   const selectedMember = useMemo(
     () => members.find((m) => m.email === recipientTo) || null,
@@ -110,6 +128,7 @@ export default function EmailComposer() {
   const handleSend = async () => {
     if (!validate()) return;
     setSending(true);
+    setSendError('');
     try {
       if (mode === 'single') {
         const mergedSubject = applyMergeFields(subject, selectedMember, { name: recipientName, email: recipientTo });
@@ -145,6 +164,8 @@ export default function EmailComposer() {
         setRecipientTo('');
         setRecipientName('');
       }, 3000);
+    } catch (error: unknown) {
+      setSendError(error instanceof Error ? error.message : 'Failed to send email');
     } finally {
       setSending(false);
     }
@@ -225,7 +246,12 @@ export default function EmailComposer() {
         <div className="lg:col-span-2 space-y-4">
           {sent && (
             <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-success/10 border border-success/30 text-success text-sm font-medium">
-              <Send size={14} /> Email recorded successfully!
+              <Send size={14} /> Email sent successfully!
+            </div>
+          )}
+          {sendError && (
+            <div className="px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm font-medium">
+              {sendError}
             </div>
           )}
 
@@ -462,4 +488,3 @@ export default function EmailComposer() {
     </div>
   );
 }
-

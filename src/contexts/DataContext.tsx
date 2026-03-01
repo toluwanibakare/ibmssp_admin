@@ -73,6 +73,8 @@ interface DataContextType {
   fetchLogs: () => Promise<void>;
   fetchEmails: () => Promise<void>;
   fetchTemplates: () => Promise<void>;
+  clearEmailHistory: () => Promise<void>;
+  clearActivityLogs: () => Promise<void>;
   approveMember: (id: number) => Promise<void>;
   createMember: (data: any) => Promise<Member>;
   sendEmail: (data: any) => Promise<void>;
@@ -84,6 +86,15 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | null>(null);
 
 const initialStats: Stats = { total: 0, student: 0, graduate: 0, individual: 0, organization: 0, today: 0 };
+const EMAIL_FOOTER_TEXT = 'For more information visit our website: www.ibmssp.org.ng or contact us on: +2348023644148';
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const API_KEY = import.meta.env.VITE_API_KEY as string | undefined;
+
+function appendEmailFooter(content?: string | null) {
+  const value = content || '';
+  if (value.includes('www.ibmssp.org.ng') || value.includes('+2348023644148')) return value;
+  return `${value}${value ? '\n\n' : ''}${EMAIL_FOOTER_TEXT}`;
+}
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -154,6 +165,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // email_templates table not yet created - stub for future use
     setTemplates([]);
   }, []);
+
+  const clearEmailHistory = async () => {
+    if (user?.role !== 'admin') {
+      throw new Error('Only admins can clear message history.');
+    }
+    const { error } = await supabase
+      .from('sent_emails')
+      .delete()
+      .not('id', 'is', null);
+    if (error) throw error;
+    setEmails([]);
+  };
+
+  const clearActivityLogs = async () => {
+    if (user?.role !== 'admin') {
+      throw new Error('Only admins can clear activity logs.');
+    }
+    const { error } = await supabase
+      .from('activity_logs')
+      .delete()
+      .not('id', 'is', null);
+    if (error) throw error;
+    setLogs([]);
+  };
 
   const getMemberById = async (id: number) => {
     const { data: member, error } = await supabase
@@ -331,25 +366,70 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const sendEmail = async (data: any) => {
-    // Record the email in the database
-    await supabase.from('sent_emails').insert({
-      recipient_email: data.to,
-      recipient_name: data.recipientName || data.to,
-      subject: data.subject,
-      body: data.html || data.text,
-      status: 'sent',
-      sent_by: user?.id || null,
-    });
+    const finalText = appendEmailFooter(data.text);
+    const finalHtml = appendEmailFooter(data.html);
+    const bodyForStorage = finalHtml || finalText;
+    if (!API_URL) {
+      throw new Error('Email API is not configured. Set VITE_API_URL.');
+    }
 
-    // Log the action
-    await supabase.from('activity_logs').insert({
-      action: 'EMAIL_SENT',
-      description: `Email sent to ${data.to}: "${data.subject}"`,
-      performed_by: user?.id || null,
-    });
+    try {
+      const response = await fetch(`${API_URL}/email/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+        },
+        body: JSON.stringify({
+          to: data.to,
+          subject: data.subject,
+          text: finalText,
+          html: finalHtml,
+        }),
+      });
 
-    fetchEmails();
-    fetchLogs();
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result?.success === false) {
+        throw new Error(result?.message || 'Failed to send email');
+      }
+
+      await supabase.from('sent_emails').insert({
+        recipient_email: data.to,
+        recipient_name: data.recipientName || data.to,
+        subject: data.subject,
+        body: bodyForStorage,
+        status: 'sent',
+        sent_by: user?.id || null,
+      });
+
+      await supabase.from('activity_logs').insert({
+        action: 'EMAIL_SENT',
+        description: `Email sent to ${data.to}: "${data.subject}"`,
+        performed_by: user?.id || null,
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to send email';
+
+      await supabase.from('sent_emails').insert({
+        recipient_email: data.to,
+        recipient_name: data.recipientName || data.to,
+        subject: data.subject,
+        body: bodyForStorage,
+        status: 'failed',
+        sent_by: user?.id || null,
+      });
+
+      await supabase.from('activity_logs').insert({
+        action: 'EMAIL_FAILED',
+        description: `Email failed for ${data.to}: "${data.subject}" (${message})`,
+        performed_by: user?.id || null,
+      });
+
+      throw new Error(message);
+    } finally {
+      fetchEmails();
+      fetchLogs();
+    }
   };
 
   const createTemplate = async (data: { name: string; subject: string; body: string }) => {
@@ -369,7 +449,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   return (
     <DataContext.Provider value={{
       members, logs, emails, templates, stats, isLoading,
-      fetchMembers, fetchLogs, fetchEmails, fetchTemplates, approveMember, createMember, sendEmail, createTemplate, getMemberById, updateMember,
+      fetchMembers, fetchLogs, fetchEmails, fetchTemplates, clearEmailHistory, clearActivityLogs, approveMember, createMember, sendEmail, createTemplate, getMemberById, updateMember,
     }}>
       {children}
     </DataContext.Provider>

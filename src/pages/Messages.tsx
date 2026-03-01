@@ -1,19 +1,74 @@
 import React, { useState } from 'react';
-import { Eye } from 'lucide-react';
+import { Eye, RotateCcw, Trash2 } from 'lucide-react';
 import { useData, SentEmail } from '@/contexts/DataContext';
 import { formatDateTime, timeAgo } from '@/lib/utils-ui';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+
+const DRAFT_STORAGE_KEY = 'ibmssp_email_draft';
+
+function htmlToText(content: string) {
+  return content
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .trim();
+}
 
 export default function Messages() {
-  const { emails } = useData();
+  const { emails, clearEmailHistory } = useData();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [preview, setPreview] = useState<SentEmail | null>(null);
+  const [isClearing, setIsClearing] = useState(false);
+  const isAdmin = user?.role === 'admin';
+
+  const handleReuse = (email: SentEmail) => {
+    const draft = {
+      to: email.recipient_email || '',
+      name: email.recipient_name || '',
+      subject: email.subject || '',
+      body: htmlToText(email.body || ''),
+    };
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    navigate('/email-composer');
+  };
+
+  const handleClearHistory = async () => {
+    const ok = window.confirm('Clear all sent/failed email history? This cannot be undone.');
+    if (!ok) return;
+
+    setIsClearing(true);
+    try {
+      await clearEmailHistory();
+      setPreview(null);
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
-      <div className="page-header">
+      <div className="page-header flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="page-title">Message History</h1>
           <p className="page-subtitle">{emails.length} emails sent</p>
         </div>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={handleClearHistory}
+            disabled={isClearing || emails.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-destructive/40 text-destructive text-sm font-medium hover:bg-destructive/10 disabled:opacity-60"
+          >
+            <Trash2 size={14} />
+            {isClearing ? 'Clearing...' : 'Clear History'}
+          </button>
+        )}
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden">
@@ -36,9 +91,12 @@ export default function Messages() {
                     }`}>{e.status}</span>
                   </td>
                   <td className="text-xs text-muted-foreground">{formatDateTime(e.sent_at)}</td>
-                  <td>
-                    <button onClick={() => setPreview(preview?.id === e.id ? null : e)} className="p-1.5 rounded hover:bg-accent transition-colors">
+                  <td className="flex items-center gap-1">
+                    <button onClick={() => setPreview(preview?.id === e.id ? null : e)} className="p-1.5 rounded hover:bg-accent transition-colors" title="Preview">
                       <Eye size={13} className="text-muted-foreground" />
+                    </button>
+                    <button onClick={() => handleReuse(e)} className="p-1.5 rounded hover:bg-accent transition-colors" title="Reuse in composer">
+                      <RotateCcw size={13} className="text-muted-foreground" />
                     </button>
                   </td>
                 </tr>
