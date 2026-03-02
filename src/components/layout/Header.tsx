@@ -107,7 +107,7 @@ export function Header({ onOpenSidebar }: { onOpenSidebar: () => void }) {
       </div>
 
       <div className="flex items-center gap-2 ml-auto">
-        <div className="relative" ref={notificationsRef}>
+        <div className="relative hidden md:block" ref={notificationsRef}>
           <button
             type="button"
             onClick={() => setShowNotifications(v => !v)}
