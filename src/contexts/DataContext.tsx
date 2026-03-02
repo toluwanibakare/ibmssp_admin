@@ -95,13 +95,6 @@ function appendEmailFooter(content?: string | null) {
   return `${value}${value ? '\n\n' : ''}${EMAIL_FOOTER_TEXT}`;
 }
 
-function getEmailApiCandidates() {
-  const candidates = [API_URL, `${window.location.origin}/api`]
-    .map((url) => url.replace(/\/$/, ''))
-    .filter(Boolean);
-  return [...new Set(candidates)];
-}
-
 export function DataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
