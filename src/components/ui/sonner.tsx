@@ -1,5 +1,6 @@
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast as sonnerToast } from "sonner";
+import { showMobileNotificationPage } from "@/lib/mobile-notify";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
@@ -28,16 +29,16 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
 const isMobileViewport = () => typeof window !== "undefined" && window.innerWidth < 768;
 
-const mobileAlert = (message: unknown, description?: unknown) => {
+const mobileNotify = (message: unknown, description?: unknown, tone?: "success" | "error" | "info" | "warning" | "default") => {
   const titleText = typeof message === "string" ? message : "Notification";
-  const descText = typeof description === "string" ? description : "";
-  window.alert(descText ? `${titleText}\n${descText}` : titleText);
+  const descText = typeof description === "string" ? description : undefined;
+  showMobileNotificationPage({ title: titleText, description: descText, tone });
 };
 
 type SonnerToastFn = typeof sonnerToast;
 const toast = ((message: unknown, data?: { description?: unknown }) => {
   if (isMobileViewport()) {
-    mobileAlert(message, data?.description);
+    mobileNotify(message, data?.description, "default");
     return "";
   }
   return sonnerToast(message as any, data as any);
@@ -45,7 +46,7 @@ const toast = ((message: unknown, data?: { description?: unknown }) => {
 
 toast.success = ((message: unknown, data?: { description?: unknown }) => {
   if (isMobileViewport()) {
-    mobileAlert(message, data?.description);
+    mobileNotify(message, data?.description, "success");
     return "";
   }
   return sonnerToast.success(message as any, data as any);
@@ -53,7 +54,7 @@ toast.success = ((message: unknown, data?: { description?: unknown }) => {
 
 toast.error = ((message: unknown, data?: { description?: unknown }) => {
   if (isMobileViewport()) {
-    mobileAlert(message, data?.description);
+    mobileNotify(message, data?.description, "error");
     return "";
   }
   return sonnerToast.error(message as any, data as any);
@@ -61,7 +62,7 @@ toast.error = ((message: unknown, data?: { description?: unknown }) => {
 
 toast.info = ((message: unknown, data?: { description?: unknown }) => {
   if (isMobileViewport()) {
-    mobileAlert(message, data?.description);
+    mobileNotify(message, data?.description, "info");
     return "";
   }
   return sonnerToast.info(message as any, data as any);
@@ -69,7 +70,7 @@ toast.info = ((message: unknown, data?: { description?: unknown }) => {
 
 toast.warning = ((message: unknown, data?: { description?: unknown }) => {
   if (isMobileViewport()) {
-    mobileAlert(message, data?.description);
+    mobileNotify(message, data?.description, "warning");
     return "";
   }
   return sonnerToast.warning(message as any, data as any);

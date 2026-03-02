@@ -1,4 +1,5 @@
 import * as React from "react";
+import { showMobileNotificationPage } from "@/lib/mobile-notify";
 
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
@@ -31,11 +32,18 @@ function isMobileViewport() {
   return window.innerWidth < 768;
 }
 
-function toAlertMessage(props: Toast) {
-  const title = typeof props.title === "string" ? props.title : "";
-  const description = typeof props.description === "string" ? props.description : "";
-  if (title && description) return `${title}\n${description}`;
-  return title || description || "Notification";
+function toNotice(props: Toast) {
+  const title =
+    typeof props.title === "string"
+      ? props.title
+      : typeof props.description === "string"
+        ? props.description
+        : "Notification";
+  const description =
+    typeof props.title === "string" && typeof props.description === "string"
+      ? props.description
+      : undefined;
+  return { title, description };
 }
 
 type ActionType = typeof actionTypes;
@@ -148,7 +156,8 @@ type Toast = Omit<ToasterToast, "id">;
 
 function toast({ ...props }: Toast) {
   if (isMobileViewport()) {
-    window.alert(toAlertMessage(props));
+    const notice = toNotice(props);
+    showMobileNotificationPage({ ...notice, tone: props.variant === "destructive" ? "error" : "default" });
     const id = genId();
     return {
       id,

@@ -15,6 +15,7 @@ import Messages from "./pages/Messages";
 import ActivityLogs from "./pages/ActivityLogs";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import MobileNotification from "./pages/MobileNotification";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,11 @@ const App = () => (
           <DataProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/notification" element={
+                <ProtectedRoute>
+                  <MobileNotification />
+                </ProtectedRoute>
+              } />
               <Route element={
                 <ProtectedRoute>
                   <DashboardLayout />
