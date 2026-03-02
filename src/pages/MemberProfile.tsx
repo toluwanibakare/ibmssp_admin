@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Mail, CheckCircle, Clock, FileText, Phone, Tag, MapPin, Pencil, Save, X } from 'lucide-react';
+import { ArrowLeft, Mail, CheckCircle, Clock, FileText, Phone, Tag, MapPin, Pencil, Save, X, Trash2 } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { CategoryBadge, StatusBadge, formatDateTime, formatDate, timeAgo } from '@/lib/utils-ui';
+import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 
 function InfoRow({ label, value }: { label: string; value?: string | number | null }) {
   if (!value) return null;
@@ -26,7 +28,8 @@ function EditRow({ label, value, onChange, type = 'text' }: { label: string; val
 export default function MemberProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { approveMember, logs, getMemberById, updateMember } = useData();
+  const { approveMember, logs, getMemberById, updateMember, deleteMember } = useData();
+  const { user } = useAuth();
   const [member, setMember] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [approving, setApproving] = useState(false);
@@ -34,6 +37,9 @@ export default function MemberProfile() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     const load = async () => {
@@ -196,6 +202,22 @@ export default function MemberProfile() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!member) return;
+    setDeleting(true);
+    try {
+      await deleteMember(member.member_id);
+      navigate('/members');
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to delete member.';
+      setError(msg);
+      window.alert(msg);
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   if (isLoading) return <div className="py-20 text-center text-muted-foreground">Loading member profile…</div>;
   if (error && !member) return (
     <div className="py-20 text-center">
@@ -227,6 +249,15 @@ export default function MemberProfile() {
                 <button onClick={handleApprove} disabled={approving}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-success/40 bg-success/10 text-success text-sm font-medium hover:bg-success/20 transition-colors disabled:opacity-60">
                   <CheckCircle size={13} /> {approving ? 'Approving…' : 'Approve Registration'}
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={deleting}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-destructive/40 bg-destructive/10 text-destructive text-sm font-medium hover:bg-destructive/20 transition-colors disabled:opacity-60"
+                >
+                  <Trash2 size={13} /> {deleting ? 'Deleting...' : 'Delete Member'}
                 </button>
               )}
             </>
@@ -429,6 +460,14 @@ export default function MemberProfile() {
           </div>
         </div>
       </div>
+
+      <DeleteConfirmModal
+        open={showDeleteConfirm}
+        name={`${member?.first_name || ''} ${member?.last_name || ''}`.trim() || 'member'}
+        onCancel={() => !deleting && setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        message="This will permanently delete this member and all associated records. This action cannot be undone."
+      />
     </div>
   );
 }

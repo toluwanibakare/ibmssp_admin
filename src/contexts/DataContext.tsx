@@ -75,6 +75,7 @@ interface DataContextType {
   fetchTemplates: () => Promise<void>;
   clearEmailHistory: () => Promise<void>;
   clearActivityLogs: () => Promise<void>;
+  deleteMember: (id: number) => Promise<void>;
   approveMember: (id: number) => Promise<void>;
   createMember: (data: any) => Promise<Member>;
   sendEmail: (data: any) => Promise<void>;
@@ -196,6 +197,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
       .not('id', 'is', null);
     if (error) throw error;
     setLogs([]);
+  };
+
+  const deleteMember = async (id: number) => {
+    if (user?.role !== 'admin') {
+      throw new Error('Only admins can delete members.');
+    }
+
+    const memberToDelete = members.find((m) => m.member_id === id) || null;
+    const fullName = memberToDelete
+      ? `${memberToDelete.first_name} ${memberToDelete.last_name}`.trim()
+      : `Member #${id}`;
+    const publicId = memberToDelete?.public_id || `ID:${id}`;
+
+    const { error } = await supabase
+      .from('members')
+      .delete()
+      .eq('member_id', id);
+    if (error) throw error;
+
+    await supabase.from('activity_logs').insert({
+      member_id: null,
+      action: 'MEMBER_DELETED',
+      description: `Member deleted: ${fullName} (${publicId})`,
+      performed_by: user?.id || null,
+    });
+
+    setMembers((prev) => prev.filter((m) => m.member_id !== id));
+    fetchMembers();
+    fetchLogs();
   };
 
   const getMemberById = async (id: number) => {
@@ -482,7 +512,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   return (
     <DataContext.Provider value={{
       members, logs, emails, templates, stats, isLoading,
-      fetchMembers, fetchLogs, fetchEmails, fetchTemplates, clearEmailHistory, clearActivityLogs, approveMember, createMember, sendEmail, createTemplate, getMemberById, updateMember,
+      fetchMembers, fetchLogs, fetchEmails, fetchTemplates, clearEmailHistory, clearActivityLogs, deleteMember, approveMember, createMember, sendEmail, createTemplate, getMemberById, updateMember,
     }}>
       {children}
     </DataContext.Provider>

@@ -1,13 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Eye, CheckCircle, ChevronLeft, ChevronRight, Plus, X, RefreshCw } from 'lucide-react';
+import { Search, Filter, Eye, CheckCircle, ChevronLeft, ChevronRight, Plus, X, RefreshCw, Trash2 } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { CategoryBadge, StatusBadge, formatDate } from '@/lib/utils-ui';
+import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 
 const PAGE_SIZE = 15;
 
 export default function Members() {
-  const { members, stats, isLoading, fetchMembers, approveMember, createMember } = useData();
+  const { members, stats, isLoading, fetchMembers, approveMember, createMember, deleteMember } = useData();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
@@ -17,6 +20,9 @@ export default function Members() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const isAdmin = user?.role === 'admin';
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -90,6 +96,26 @@ export default function Members() {
     e.stopPropagation();
     setApprovingId(id);
     try { await approveMember(id); } finally { setApprovingId(null); }
+  };
+
+  const requestDelete = (id: number, name: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMemberToDelete({ id, name });
+  };
+
+  const confirmDelete = async () => {
+    if (!memberToDelete) return;
+    setDeleting(true);
+    try {
+      await deleteMember(memberToDelete.id);
+      setMemberToDelete(null);
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to delete member.';
+      setError(msg);
+      window.alert(msg);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const openAdd = () => {
@@ -196,6 +222,15 @@ export default function Members() {
                         {m.registration_status !== 'approved' && (
                           <button onClick={(e) => handleApprove(m.member_id, e)} disabled={approvingId === m.member_id} className="p-1.5 rounded hover:bg-success/10 transition-colors" title="Approve">
                             <CheckCircle size={13} className="text-success" />
+                          </button>
+                        )}
+                        {isAdmin && (
+                          <button
+                            onClick={(e) => requestDelete(m.member_id, `${m.first_name} ${m.last_name}`.trim(), e)}
+                            className="p-1.5 rounded hover:bg-destructive/10 transition-colors"
+                            title="Delete member"
+                          >
+                            <Trash2 size={13} className="text-destructive" />
                           </button>
                         )}
                       </div>
@@ -439,6 +474,14 @@ export default function Members() {
           </div>
         </div>
       )}
+
+      <DeleteConfirmModal
+        open={!!memberToDelete}
+        name={memberToDelete?.name || 'member'}
+        onCancel={() => !deleting && setMemberToDelete(null)}
+        onConfirm={confirmDelete}
+        message="This will permanently delete this member and all associated records. This action cannot be undone."
+      />
     </div>
   );
 }
