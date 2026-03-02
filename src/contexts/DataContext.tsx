@@ -88,21 +88,11 @@ const DataContext = createContext<DataContextType | null>(null);
 
 const initialStats: Stats = { total: 0, student: 0, graduate: 0, individual: 0, organization: 0, today: 0 };
 const EMAIL_FOOTER_TEXT = 'For more information visit our website: www.ibmssp.org.ng or contact us on: +2348023644148';
-const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
-const API_KEY = import.meta.env.VITE_API_KEY as string | undefined;
-const EMAIL_REQUEST_TIMEOUT_MS = 15000;
 
 function appendEmailFooter(content?: string | null) {
   const value = content || '';
   if (value.includes('www.ibmssp.org.ng') || value.includes('+2348023644148')) return value;
   return `${value}${value ? '\n\n' : ''}${EMAIL_FOOTER_TEXT}`;
-}
-
-function getEmailApiCandidates() {
-  const candidates = [API_URL, `${window.location.origin}/api`]
-    .map((url) => url.replace(/\/$/, ''))
-    .filter(Boolean);
-  return [...new Set(candidates)];
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
@@ -404,89 +394,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const sendEmail = async (data: any) => {
-    const finalText = appendEmailFooter(data.text);
-    const finalHtml = appendEmailFooter(data.html);
-    const bodyForStorage = finalHtml || finalText;
-    const apiCandidates = getEmailApiCandidates();
-    if (apiCandidates.length === 0) throw new Error('Email API is not configured.');
-
     try {
-      let delivered = false;
-      let lastError: string | null = null;
-
-      for (const baseUrl of apiCandidates) {
-        const controller = new AbortController();
-        const timer = window.setTimeout(() => controller.abort(), EMAIL_REQUEST_TIMEOUT_MS);
-        try {
-          const response = await fetch(`${baseUrl}/email/send`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
-            },
-            body: JSON.stringify({
-              to: data.to,
-              subject: data.subject,
-              text: finalText,
-              html: finalHtml,
-            }),
-            signal: controller.signal,
-          });
-
-          const result = await response.json().catch(() => ({}));
-          if (!response.ok || result?.success === false) {
-            lastError = result?.message || `Email API error (${response.status})`;
-            continue;
-          }
-
-          delivered = true;
-          break;
-        } catch (err: unknown) {
-          if (err instanceof DOMException && err.name === 'AbortError') {
-            lastError = `Email API timeout at ${baseUrl}`;
-          } else if (err instanceof Error) {
-            lastError = `Network error reaching ${baseUrl}: ${err.message}`;
-          } else {
-            lastError = `Network error reaching ${baseUrl}`;
-          }
-        } finally {
-          window.clearTimeout(timer);
-        }
-      }
-
-      if (!delivered) throw new Error(lastError || 'Failed to send email');
-
-      await supabase.from('sent_emails').insert({
-        recipient_email: data.to,
-        recipient_name: data.recipientName || data.to,
-        subject: data.subject,
-        body: bodyForStorage,
-        status: 'sent',
-        sent_by: user?.id || null,
+      const { data: result, error } = await supabase.functions.invoke('send-email', {
+        body: {
+          to: data.to,
+          subject: data.subject,
+          text: appendEmailFooter(data.text),
+          html: appendEmailFooter(data.html),
+          recipientName: data.recipientName || data.to,
+        },
       });
 
-      await supabase.from('activity_logs').insert({
-        action: 'EMAIL_SENT',
-        description: `Email sent to ${data.to}: "${data.subject}"`,
-        performed_by: user?.id || null,
-      });
+      if (error) throw new Error(error.message || 'Failed to send email');
+      if (result && result.success === false) throw new Error(result.message || 'Failed to send email');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to send email';
-
-      await supabase.from('sent_emails').insert({
-        recipient_email: data.to,
-        recipient_name: data.recipientName || data.to,
-        subject: data.subject,
-        body: bodyForStorage,
-        status: 'failed',
-        sent_by: user?.id || null,
-      });
-
-      await supabase.from('activity_logs').insert({
-        action: 'EMAIL_FAILED',
-        description: `Email failed for ${data.to}: "${data.subject}" (${message})`,
-        performed_by: user?.id || null,
-      });
 
       throw new Error(message);
     } finally {
