@@ -26,6 +26,18 @@ function genId() {
   return count.toString();
 }
 
+function isMobileViewport() {
+  if (typeof window === "undefined") return false;
+  return window.innerWidth < 768;
+}
+
+function toAlertMessage(props: Toast) {
+  const title = typeof props.title === "string" ? props.title : "";
+  const description = typeof props.description === "string" ? props.description : "";
+  if (title && description) return `${title}\n${description}`;
+  return title || description || "Notification";
+}
+
 type ActionType = typeof actionTypes;
 
 type Action =
@@ -135,6 +147,16 @@ function dispatch(action: Action) {
 type Toast = Omit<ToasterToast, "id">;
 
 function toast({ ...props }: Toast) {
+  if (isMobileViewport()) {
+    window.alert(toAlertMessage(props));
+    const id = genId();
+    return {
+      id,
+      dismiss: () => undefined,
+      update: () => undefined,
+    };
+  }
+
   const id = genId();
 
   const update = (props: ToasterToast) =>

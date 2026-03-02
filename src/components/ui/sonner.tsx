@@ -1,5 +1,5 @@
 import { useTheme } from "next-themes";
-import { Toaster as Sonner, toast } from "sonner";
+import { Toaster as Sonner, toast as sonnerToast } from "sonner";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
@@ -25,5 +25,54 @@ const Toaster = ({ ...props }: ToasterProps) => {
     />
   );
 };
+
+const isMobileViewport = () => typeof window !== "undefined" && window.innerWidth < 768;
+
+const mobileAlert = (message: unknown, description?: unknown) => {
+  const titleText = typeof message === "string" ? message : "Notification";
+  const descText = typeof description === "string" ? description : "";
+  window.alert(descText ? `${titleText}\n${descText}` : titleText);
+};
+
+type SonnerToastFn = typeof sonnerToast;
+const toast = ((message: unknown, data?: { description?: unknown }) => {
+  if (isMobileViewport()) {
+    mobileAlert(message, data?.description);
+    return "";
+  }
+  return sonnerToast(message as any, data as any);
+}) as SonnerToastFn;
+
+toast.success = ((message: unknown, data?: { description?: unknown }) => {
+  if (isMobileViewport()) {
+    mobileAlert(message, data?.description);
+    return "";
+  }
+  return sonnerToast.success(message as any, data as any);
+}) as SonnerToastFn["success"];
+
+toast.error = ((message: unknown, data?: { description?: unknown }) => {
+  if (isMobileViewport()) {
+    mobileAlert(message, data?.description);
+    return "";
+  }
+  return sonnerToast.error(message as any, data as any);
+}) as SonnerToastFn["error"];
+
+toast.info = ((message: unknown, data?: { description?: unknown }) => {
+  if (isMobileViewport()) {
+    mobileAlert(message, data?.description);
+    return "";
+  }
+  return sonnerToast.info(message as any, data as any);
+}) as SonnerToastFn["info"];
+
+toast.warning = ((message: unknown, data?: { description?: unknown }) => {
+  if (isMobileViewport()) {
+    mobileAlert(message, data?.description);
+    return "";
+  }
+  return sonnerToast.warning(message as any, data as any);
+}) as SonnerToastFn["warning"];
 
 export { Toaster, toast };
