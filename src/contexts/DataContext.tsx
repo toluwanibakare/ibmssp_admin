@@ -88,9 +88,6 @@ const DataContext = createContext<DataContextType | null>(null);
 
 const initialStats: Stats = { total: 0, student: 0, graduate: 0, individual: 0, organization: 0, today: 0 };
 const EMAIL_FOOTER_TEXT = 'For more information visit our website: www.ibmssp.org.ng or contact us on: +2348023644148';
-const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
-const API_KEY = import.meta.env.VITE_API_KEY as string | undefined;
-const EMAIL_REQUEST_TIMEOUT_MS = 15000;
 
 function appendEmailFooter(content?: string | null) {
   const value = content || '';
