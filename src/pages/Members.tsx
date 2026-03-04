@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Eye, CheckCircle, ChevronLeft, ChevronRight, Plus, X, RefreshCw, Trash2 } from 'lucide-react';
+import { Search, Filter, Eye, CheckCircle, ChevronLeft, ChevronRight, Plus, X, RefreshCw, Trash2, Download } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryBadge, StatusBadge, formatDate } from '@/lib/utils-ui';
@@ -167,6 +167,46 @@ export default function Members() {
     }
   };
 
+  const handleExport = () => {
+    if (filtered.length === 0) return;
+
+    const headers = [
+      'Member ID', 'First Name', 'Last Name', 'Email', 'Phone', 'Category',
+      'Reg Status', 'Payment Status', 'Gender', 'Country', 'State', 'Address', 'Registered Date'
+    ];
+
+    const rows = filtered.map(m => [
+      m.public_id || 'PENDING',
+      m.first_name,
+      m.last_name,
+      m.email,
+      m.phone,
+      m.category,
+      m.registration_status,
+      m.payment_status,
+      m.gender || '',
+      m.country || '',
+      m.state || '',
+      m.address || '',
+      new Date(m.created_at).toLocaleDateString()
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `members_registry_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-5 pb-28">
       <div className="page-header flex-col items-start gap-3 sm:flex-row sm:items-center">
@@ -174,9 +214,14 @@ export default function Members() {
           <h1 className="page-title">Members Registry</h1>
           <p className="page-subtitle">{stats.total} total registered members</p>
         </div>
-        <button onClick={handleRefresh} disabled={refreshing} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium hover:bg-accent/50 transition-colors">
-          <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /> Refresh
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button onClick={handleExport} disabled={filtered.length === 0} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium hover:bg-accent/50 transition-colors">
+            <Download size={14} /> Export CSV
+          </button>
+          <button onClick={handleRefresh} disabled={refreshing} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium hover:bg-accent/50 transition-colors">
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /> Refresh
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3">

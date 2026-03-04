@@ -60,6 +60,10 @@ interface Stats {
   individual: number;
   organization: number;
   today: number;
+  approved: number;
+  pending: number;
+  paid: number;
+  unpaid: number;
 }
 
 interface DataContextType {
@@ -86,7 +90,7 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | null>(null);
 
-const initialStats: Stats = { total: 0, student: 0, graduate: 0, individual: 0, organization: 0, today: 0 };
+const initialStats: Stats = { total: 0, student: 0, graduate: 0, individual: 0, organization: 0, today: 0, approved: 0, pending: 0, paid: 0, unpaid: 0 };
 const EMAIL_FOOTER_TEXT = 'For more information visit our website: www.ibmssp.org.ng or contact us on: +2348023644148';
 
 function appendEmailFooter(content?: string | null) {
@@ -121,8 +125,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const counts = m.reduce((acc: any, member) => {
         acc[member.category] = (acc[member.category] || 0) + 1;
         if (new Date(member.created_at).toDateString() === today) acc.today++;
+
+        // Add registration and payment status stats
+        const regStatus = (member.registration_status || '').toLowerCase();
+        acc[regStatus] = (acc[regStatus] || 0) + 1;
+
+        const payStatus = (member.payment_status || '').toLowerCase();
+        acc[payStatus] = (acc[payStatus] || 0) + 1;
+
         return acc;
-      }, { student: 0, graduate: 0, individual: 0, organization: 0, today: 0 });
+      }, { student: 0, graduate: 0, individual: 0, organization: 0, today: 0, approved: 0, pending: 0, paid: 0, unpaid: 0 });
 
       setStats({ total: m.length, ...counts });
     } catch (error) {
