@@ -11,41 +11,44 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log("register invocation", {
-      method: req.method,
-      hasApiKey: Boolean(req.headers.get("x-api-key")),
-      contentType: req.headers.get("content-type"),
-    });
+    console.log("--- Register Hook Invoked ---");
+    console.log("Method:", req.method);
+    console.log("Headers:", JSON.stringify(Object.fromEntries(req.headers.entries())));
 
     const apiKey = req.headers.get("x-api-key");
     const expectedKey = Deno.env.get("REGISTRATION_API_KEY");
     
-    if (expectedKey) {
-      if (!apiKey || apiKey !== expectedKey) {
-        console.warn("register rejected: invalid or missing api key", {
-          hasApiKey: Boolean(apiKey),
-        });
+    if (expectedKey && (!apiKey || apiKey !== expectedKey)) {
+      console.warn("CRITICAL: Auth Failure - Missing or invalid x-api-key", {
+        hasProvidedKey: Boolean(apiKey),
+        expectedKeySet: true
+      });
 
-        return new Response(JSON.stringify({ success: false, message: "Invalid or missing API key" }), {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: "API Key Authentication Failed. Ensure x-api-key header is sent.",
+          debug: { hasKey: Boolean(apiKey) }
+        }), 
+        {
           status: 401,
           headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
-      }
+        }
+      );
     }
 
-    let body = await req.json();
+    let body = await req.json().catch(() => ({}));
     
-    // Handle double-encoded JSON if it arrives as a string
     if (typeof body === "string") {
       try {
+        console.log("Detected string body, attempting secondary parse...");
         body = JSON.parse(body);
-        console.log("Parsed double-encoded body");
       } catch (e) {
-        console.warn("Body is a string but not valid JSON", body.substring(0, 100));
+        console.error("Secondary JSON parse failed:", e.message);
       }
     }
     
-    console.log("register payload keys", Object.keys(body || {}));
+    console.log("Parsed Payload Keys:", Object.keys(body));
 
     const splitName = (fullName?: string) => {
       const cleaned = (fullName || "").trim();
