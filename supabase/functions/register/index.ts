@@ -19,19 +19,32 @@ Deno.serve(async (req) => {
 
     const apiKey = req.headers.get("x-api-key");
     const expectedKey = Deno.env.get("REGISTRATION_API_KEY");
-    if (expectedKey && apiKey !== expectedKey) {
-      console.warn("register rejected: invalid api key", {
-        hasExpectedKey: Boolean(expectedKey),
-        hasProvidedKey: Boolean(apiKey),
-      });
+    
+    if (expectedKey) {
+      if (!apiKey || apiKey !== expectedKey) {
+        console.warn("register rejected: invalid or missing api key", {
+          hasApiKey: Boolean(apiKey),
+        });
 
-      return new Response(JSON.stringify({ success: false, message: "Invalid API key" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+        return new Response(JSON.stringify({ success: false, message: "Invalid or missing API key" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
     }
 
-    const body = await req.json();
+    let body = await req.json();
+    
+    // Handle double-encoded JSON if it arrives as a string
+    if (typeof body === "string") {
+      try {
+        body = JSON.parse(body);
+        console.log("Parsed double-encoded body");
+      } catch (e) {
+        console.warn("Body is a string but not valid JSON", body.substring(0, 100));
+      }
+    }
+    
     console.log("register payload keys", Object.keys(body || {}));
 
     const splitName = (fullName?: string) => {
@@ -58,11 +71,11 @@ Deno.serve(async (req) => {
     const other_name = body.other_name;
     const gender = body.gender;
     const date_of_birth = body.date_of_birth;
-    const email = body.email || body["email-address"] || body["your-email"];
-    const phone = body.phone || body["tel-290"] || body["your-phone"] || body["tel-766"];
-    const address = body.address;
-    const state = body.state;
-    const country = body.country;
+    const email = body.email || body["email-address"] || body["your-email"] || body["email"];
+    const phone = body.phone || body["tel-290"] || body["your-phone"] || body["tel-766"] || body["phone"];
+    const address = body.address || body["your-address"] || body["text-address"];
+    const state = body.state || body["your-state"] || body["text-state"];
+    const country = body.country || body["your-country"] || "Nigeria";
 
     console.log("register mapped fields", {
       category,
