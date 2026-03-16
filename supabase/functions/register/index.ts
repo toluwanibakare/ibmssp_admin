@@ -32,10 +32,18 @@ Deno.serve(async (req) => {
       return { first_name, last_name };
     };
 
-    const nameFallback = splitName(body.full_name || body['full-name']);
-    const category = body.category;
-    const first_name = body.first_name || nameFallback.first_name;
-    const last_name = body.last_name || nameFallback.last_name;
+    const organization_name = body.organization_name || body['your-organization'];
+    const inferredCategory = organization_name ? "organization" : undefined;
+    const nameFallback = splitName(body.full_name || body['full-name'] || organization_name);
+    const category = body.category || inferredCategory;
+    const first_name =
+      body.first_name ||
+      (category === "organization" ? organization_name : undefined) ||
+      nameFallback.first_name;
+    const last_name =
+      body.last_name ||
+      (category === "organization" ? "Organization" : undefined) ||
+      nameFallback.last_name;
     const other_name = body.other_name;
     const gender = body.gender;
     const date_of_birth = body.date_of_birth;
@@ -109,20 +117,21 @@ Deno.serve(async (req) => {
         professional_certifications: body.professional_certifications || null,
         license_number: body.license_number || null,
       });
-    } else if (category === "organization" && body.organization_name) {
+    } else if (category === "organization" && organization_name) {
       await supabase.from("organization_details").insert({
         member_id: memberId,
-        organization_name: body.organization_name,
+        organization_name,
         rc_number: body.rc_number || null,
         organization_type: body.organization_type || null,
         industry: body.industry || null,
-        iso_start_year: body.iso_start_year || null,
+        iso_start_year: body.iso_start_year || body['date-394'] || null,
         contact_person: body.contact_person || null,
         contact_person_role: body.contact_person_role || null,
         company_email: body.company_email || email,
         company_phone: body.company_phone || phone,
         company_address: body.company_address || null,
         number_of_staff: body.number_of_staff || null,
+        company_certificate_file: body.company_certificate_file || body['file-business'] || null,
       });
     }
 
