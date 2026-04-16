@@ -76,10 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const hasInitialized = React.useRef(false);
+
   useEffect(() => {
     let isMounted = true;
     const bootTimeout = window.setTimeout(() => {
-      if (isMounted) setIsLoading(false);
+      if (isMounted && !hasInitialized.current) setIsLoading(false);
     }, AUTH_BOOT_TIMEOUT_MS);
 
     const applySession = async (session: { user: User } | null) => {
@@ -88,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!session?.user) {
         setUser(null);
         setIsLoading(false);
+        hasInitialized.current = true;
         return;
       }
 
@@ -99,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
         setUser(null);
         setIsLoading(false);
+        hasInitialized.current = true;
         return;
       }
 
@@ -106,9 +110,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         writeAuthPrefs({ ...prefs, lastLoginAt: Date.now() });
       }
 
-      setIsLoading(true);
+      // Only show global loading on first successful init
+      if (!hasInitialized.current) {
+        setIsLoading(true);
+      }
+
       try {
         await loadProfile(session.user);
+        hasInitialized.current = true;
       } catch {
         setUser(null);
       } finally {
@@ -120,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, session) => {
         if (event === 'SIGNED_OUT') {
           clearAuthPrefs();
+          hasInitialized.current = false;
         }
         // Avoid blocking auth event processing; apply session in the background.
         void applySession((session ? { user: session.user } : null));
@@ -132,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isMounted) {
           setUser(null);
           setIsLoading(false);
+          hasInitialized.current = true;
         }
       });
 

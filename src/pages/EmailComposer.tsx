@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Send, User, Tag, Clock } from 'lucide-react';
+import { Send, User, Tag, Clock, Linkedin, MessageCircle } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { timeAgo } from '@/lib/utils-ui';
 import { useAuth } from '@/contexts/AuthContext';
@@ -384,17 +384,52 @@ export default function EmailComposer() {
                 ))}
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-2">
-                <div className="space-y-1">
-                  <p className="text-xs font-medium">Subject Preview</p>
-                  <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs break-words [overflow-wrap:anywhere] min-h-9">
-                    {previewSubject || <span className="text-muted-foreground">No subject yet</span>}
+              <div className="grid gap-4 mt-2">
+                <div className="space-y-1.5">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subject Line Preview</p>
+                  <div className="rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium shadow-sm break-words [overflow-wrap:anywhere] min-h-11 flex items-center">
+                    {previewSubject || <span className="text-muted-foreground italic font-normal text-xs">No subject drafted yet...</span>}
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-medium">Message Preview</p>
-                  <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs whitespace-pre-wrap break-words [overflow-wrap:anywhere] min-h-20">
-                    {previewBody || <span className="text-muted-foreground">No message yet</span>}
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Live Branded Preview</p>
+                    <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 font-medium">Desktop View</span>
+                  </div>
+                  
+                  <div className="rounded-xl border border-border bg-[#f9fafb] p-4 sm:p-6 overflow-hidden">
+                    <div className="max-w-[100%] mx-auto bg-white rounded-lg shadow-sm overflow-hidden border border-slate-200">
+                      {/* Simulated Header */}
+                      <div className="py-4 px-4 text-center border-b-2 border-[#059669] bg-white">
+                        <img src="/src/assets/ibmssp-logo.png" alt="IBMSSP" className="h-10 mx-auto object-contain" />
+                      </div>
+                      
+                      {/* Body */}
+                      <div className="p-6 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap min-h-[150px]">
+                        {previewBody || <span className="text-muted-foreground italic">Start typing your message to see the preview...</span>}
+                      </div>
+
+                      {/* Simulated Footer */}
+                      <div className="p-6 bg-[#fcfcfc] border-t border-slate-100 text-center">
+                        <div className="flex justify-center gap-3 mb-4">
+                          <div className="w-8 h-8 rounded-full bg-[#0077b5]/10 flex items-center justify-center text-[#0077b5]">
+                            <Linkedin size={16} />
+                          </div>
+                          <div className="w-8 h-8 rounded-full bg-slate-900/10 flex items-center justify-center text-slate-900">
+                            <span className="font-bold text-[10px]">X</span>
+                          </div>
+                          <div className="w-8 h-8 rounded-full bg-[#25d366]/10 flex items-center justify-center text-[#25d366]">
+                            <MessageCircle size={16} fill="currentColor" />
+                          </div>
+                        </div>
+                        <div className="text-[10px] leading-relaxed text-slate-500">
+                          <p className="font-bold text-slate-900">© {new Date().getFullYear()} Institute of Business Management Systems Standards Practitioners (IBMSSP).</p>
+                          <p className="mt-1">Registered by the CAC in June 12th, 2025.</p>
+                          <a href="#" className="text-[#059669] font-medium block mt-2 no-underline">www.ibmssp.org.ng</a>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

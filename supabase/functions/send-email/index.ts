@@ -7,16 +7,75 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const EMAIL_FOOTER_TEXT =
-  "For more information visit our website: www.ibmssp.org.ng or contact us on: +2348023644148";
-const EMAIL_FOOTER_HTML =
-  '<br><br><hr style="border:none;border-top:1px solid #ddd;margin:16px 0;" /><p style="font-size:12px;color:#555;">For more information visit our website: <a href="https://www.ibmssp.org.ng" target="_blank" rel="noopener noreferrer">www.ibmssp.org.ng</a> or contact us on: +2348023644148</p>';
+const EMAIL_FOOTER_TEXT = 
+  "\n---\nInstitute of Business Management Systems Standards Practitioners (IBMSSP)\n" +
+  "A body of professionals in the business sustainability environment, registered by the Corporate Affairs Commission in June 12th, 2025.\n" +
+  "Website: www.ibmssp.org.ng | WhatsApp: +2348023644148\n" +
+  "LinkedIn: company/ibmssp | X: @ibmssp";
+
+const EMAIL_HEADER_HTML = `
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; border-bottom: 3px solid #059669;">
+    <tr>
+      <td align="center" style="padding: 25px 0;">
+        <img src="https://ukjmduimszrydwoyrksi.supabase.co/storage/v1/object/public/assets/ibmssp-logo.png" alt="IBMSSP" style="height: 70px; width: auto; display: block; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));" onerror="this.style.display='none'; this.nextSibling.style.display='block';" /><span style="display:none; color: #059669; font-size: 24px; font-weight: bold; letter-spacing: -0.5px;">IBMSSP</span>
+      </td>
+    </tr>
+  </table>
+`;
+
+const EMAIL_FOOTER_HTML = `
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 40px; background-color: #fcfcfc; border-top: 1px solid #eeeeee;">
+    <tr>
+      <td align="center" style="padding: 30px 20px;">
+        <div style="margin-bottom: 20px;">
+          <a href="https://www.linkedin.com/company/ibmssp" style="display: inline-block; margin: 0 12px; text-decoration: none;">
+            <img src="https://img.icons8.com/color/48/linkedin.png" width="28" height="28" alt="LinkedIn" />
+          </a>
+          <a href="https://x.com/ibmssp" style="display: inline-block; margin: 0 12px; text-decoration: none;">
+            <img src="https://img.icons8.com/ios-filled/50/000000/twitterx--v1.png" width="28" height="28" alt="X" />
+          </a>
+          <a href="https://wa.me/2348023644148" style="display: inline-block; margin: 0 12px; text-decoration: none;">
+            <img src="https://img.icons8.com/color/48/whatsapp.png" width="28" height="28" alt="WhatsApp" />
+          </a>
+        </div>
+        
+        <div style="font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #666666; max-width: 500px;">
+          <p style="margin: 0; font-weight: 700; color: #111827;">
+            © \${new Date().getFullYear()} Institute of Business Management Systems Standards Practitioners (IBMSSP).
+          </p>
+          <p style="margin: 8px 0; color: #4b5563;">
+            A body of professionals in the business sustainability environment, registered by the Corporate Affairs Commission in June 12th, 2025.
+          </p>
+          <div style="border-top: 1px solid #eeeeee; margin: 15px auto; width: 40px;"></div>
+          <p style="margin: 0;">
+            <a href="https://www.ibmssp.org.ng" style="color: #059669; text-decoration: none; font-weight: 600;">Visit website: www.ibmssp.org.ng</a>
+          </p>
+        </div>
+      </td>
+    </tr>
+  </table>
+`;
+
+function wrapHtmlContent(content: string | undefined): string {
+  if (!content) return "";
+  if (content.includes('id="ibmssp-email-wrapper"')) return content;
+  return \`
+    <div id="ibmssp-email-wrapper" style="background-color: #f9fafb; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        \${EMAIL_HEADER_HTML}
+        <div style="padding: 40px; line-height: 1.6; color: #374151; font-size: 16px;">
+          \${content}
+        </div>
+        \${EMAIL_FOOTER_HTML}
+      </div>
+    </div>
+  \`;
+}
 
 function appendFooter(content: string | undefined, footer: string): string {
   const value = content || "";
-  if (value.includes("www.ibmssp.org.ng") || value.includes("+2348023644148"))
-    return value;
-  return `${value}${value ? "\n\n" : ""}${footer}`;
+  if (value.includes("---")) return value; // Use a separator as a marker instead
+  return \`\${value}\${value ? "\n\n" : ""}\${footer}\`;
 }
 
 Deno.serve(async (req) => {
@@ -62,7 +121,7 @@ Deno.serve(async (req) => {
     }
 
     const finalText = appendFooter(text, EMAIL_FOOTER_TEXT);
-    const finalHtml = appendFooter(html, EMAIL_FOOTER_HTML);
+    const finalHtml = wrapHtmlContent(html);
 
     // Send email via SMTP
     const smtpPort = Number(Deno.env.get("SMTP_PORT") || "465");

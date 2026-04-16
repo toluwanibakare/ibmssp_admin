@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Mail, MessageSquare, ClipboardList, Settings,
-  ChevronLeft, ChevronRight, X
+  ChevronLeft, ChevronRight, X, Newspaper
 } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
   { to: '/members', icon: Users, label: 'Members Registry' },
+  { to: '/newsletter', icon: Newspaper, label: 'Newsletter Hub' },
   { to: '/email-composer', icon: Mail, label: 'Email Composer' },
   { to: '/messages', icon: MessageSquare, label: 'Messages' },
   { to: '/activity-logs', icon: ClipboardList, label: 'Activity Logs' },
@@ -47,12 +48,12 @@ export function Sidebar({ isMobileOpen, onMobileClose }: { isMobileOpen: boolean
         onMouseLeave={() => setIsHovered(false)}
       >
       <div className="flex items-center gap-2.5 px-4 py-4 border-b" style={{ borderColor: 'hsl(var(--sidebar-border))' }}>
-        <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
-          <span className="text-xs font-bold text-primary-foreground">IB</span>
+        <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+          <img src="/src/assets/ibmssp-icon.png" alt="IBMSSP Logo" className="w-full h-full object-cover" />
         </div>
         {isExpanded && (
           <div className="overflow-hidden">
-            <p className="text-sm font-semibold leading-tight" style={{ color: 'hsl(var(--sidebar-fg))' }}>IBMSSP ADMIN</p>
+            <p className="text-sm font-semibold leading-tight whitespace-nowrap" style={{ color: 'hsl(var(--sidebar-fg))' }}>IBMSSP ADMIN</p>
             <p className="text-xs" style={{ color: 'hsl(var(--sidebar-muted))' }}>Registry Panel</p>
           </div>
         )}

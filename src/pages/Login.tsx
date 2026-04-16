@@ -34,11 +34,11 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-primary mx-auto flex items-center justify-center mb-4 shadow-lg">
-              <ShieldCheck size={26} className="text-primary-foreground" />
+            <div className="mb-6 flex justify-center">
+              <img src="/src/assets/ibmssp-logo.png" alt="IBMSSP Logo" className="h-20 w-auto object-contain" />
             </div>
-            <h1 className="text-xl font-bold text-foreground">IBMSSP ADMIN</h1>
-            <p className="text-sm text-muted-foreground mt-1">Member Registry Management System</p>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Admin Portal</h1>
+            <p className="text-sm text-muted-foreground mt-2">Member Registry Management System</p>
           </div>
 
           <div className="bg-card rounded-2xl border border-border p-5 sm:p-6 shadow-card">
