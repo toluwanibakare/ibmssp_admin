@@ -186,7 +186,7 @@ export default function Newsletter() {
                     <div className="max-w-[600px] mx-auto bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200">
                       {/* Branded Header */}
                       <div className="p-8 text-center border-b-[3px] border-[#059669] bg-white">
-                        <img src="/src/assets/ibmssp-logo.png" alt="IBMSSP" className="h-16 mx-auto object-contain" />
+                        <img src="/ibmssp-logo.png" alt="IBMSSP" className="h-16 mx-auto object-contain" />
                       </div>
                       
                       {/* Email Body */}

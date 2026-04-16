@@ -402,7 +402,7 @@ export default function EmailComposer() {
                     <div className="max-w-[100%] mx-auto bg-white rounded-lg shadow-sm overflow-hidden border border-slate-200">
                       {/* Simulated Header */}
                       <div className="py-4 px-4 text-center border-b-2 border-[#059669] bg-white">
-                        <img src="/src/assets/ibmssp-logo.png" alt="IBMSSP" className="h-10 mx-auto object-contain" />
+                        <img src="/ibmssp-logo.png" alt="IBMSSP" className="h-10 mx-auto object-contain" />
                       </div>
                       
                       {/* Body */}
