@@ -5,6 +5,7 @@ import { useData } from '@/contexts/DataContext';
 import { timeAgo } from '@/lib/utils-ui';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Member } from '@/contexts/DataContext';
+import ibmsspLogo from '@/assets/ibmssp-logo.png';
 
 type RecipientMode = 'single' | 'category';
 type ComposerField = 'subject' | 'body';
@@ -402,7 +403,7 @@ export default function EmailComposer() {
                     <div className="max-w-[100%] mx-auto bg-white rounded-lg shadow-sm overflow-hidden border border-slate-200">
                       {/* Simulated Header */}
                       <div className="py-4 px-4 text-center border-b-2 border-[#059669] bg-white">
-                        <img src="/ibmssp-logo.png" alt="IBMSSP" className="h-10 mx-auto object-contain" />
+                        <img src={ibmsspLogo} alt="IBMSSP" className="h-10 mx-auto object-contain" />
                       </div>
                       
                       {/* Body */}

@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import ibmsspLogo from '@/assets/ibmssp-logo.png';
 
 export default function Newsletter() {
   const { members, sendEmail } = useData();
@@ -186,7 +187,7 @@ export default function Newsletter() {
                     <div className="max-w-[600px] mx-auto bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200">
                       {/* Branded Header */}
                       <div className="p-8 text-center border-b-[3px] border-[#059669] bg-white">
-                        <img src="/ibmssp-logo.png" alt="IBMSSP" className="h-16 mx-auto object-contain" />
+                        <img src={ibmsspLogo} alt="IBMSSP" className="h-16 mx-auto object-contain" />
                       </div>
                       
                       {/* Email Body */}
