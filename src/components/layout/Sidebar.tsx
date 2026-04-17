@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Users, Mail, MessageSquare, ClipboardList, Settings,
   ChevronLeft, ChevronRight, X, Newspaper
 } from 'lucide-react';
+import ibmsspIcon from '@/assets/ibmssp-icon.png';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
@@ -49,7 +50,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: { isMobileOpen: boolean
       >
       <div className="flex items-center gap-2.5 px-4 py-4 border-b" style={{ borderColor: 'hsl(var(--sidebar-border))' }}>
         <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
-          <img src="/src/assets/ibmssp-icon.png" alt="IBMSSP Logo" className="w-full h-full object-cover" />
+          <img src={ibmsspIcon} alt="IBMSSP Logo" className="w-full h-full object-cover" />
         </div>
         {isExpanded && (
           <div className="overflow-hidden">

@@ -3,6 +3,7 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppFooter } from '@/components/layout/AppFooter';
+import ibmsspLogo from '@/assets/ibmssp-logo.png';
 
 export default function Login() {
   const { login, isAuthenticated, isLoading } = useAuth();
@@ -35,7 +36,7 @@ export default function Login() {
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
             <div className="mb-6 flex justify-center">
-              <img src="/src/assets/ibmssp-logo.png" alt="IBMSSP Logo" className="h-20 w-auto object-contain" />
+              <img src={ibmsspLogo} alt="IBMSSP Logo" className="h-20 w-auto object-contain" />
             </div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">Admin Portal</h1>
             <p className="text-sm text-muted-foreground mt-2">Member Registry Management System</p>
