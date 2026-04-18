@@ -3,7 +3,8 @@ import {
   Send, Image as ImageIcon, Paperclip, Bold, Italic, List, 
   ListOrdered, AlignLeft, AlignCenter, AlignRight, Underline,
   Eye, Save, Trash2, X, Plus, FileText, CheckCircle2, Loader2,
-  Users, UserCheck, GraduationCap, School, Building2, Linkedin, MessageCircle
+  Users, UserCheck, GraduationCap, School, Building2, Linkedin, MessageCircle,
+  CreditCard, AlertCircle
 } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,7 +23,7 @@ export default function Newsletter() {
   const { user } = useAuth();
   
   const [subject, setSubject] = useState('');
-  const [recipientFilter, setRecipientFilter] = useState('all');
+  const [recipientFilter, setRecipientFilter] = useState('paid_members');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -72,6 +73,13 @@ export default function Newsletter() {
 
   const filteredMembers = members.filter(m => {
     if (recipientFilter === 'all') return true;
+    if (recipientFilter === 'paid_members') {
+      return (m.payment_status || '').toLowerCase() === 'paid' && 
+             (m.registration_status || '').toLowerCase() === 'approved';
+    }
+    if (recipientFilter === 'unpaid_members') {
+      return (m.payment_status || '').toLowerCase() !== 'paid';
+    }
     return m.category === recipientFilter;
   });
 
@@ -313,11 +321,22 @@ export default function Newsletter() {
                     <SelectValue placeholder="Choose audience" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="paid_members">
+                      <div className="flex items-center gap-2">
+                        <CreditCard size={14} className="text-emerald-500" /> Paid Members (Approved)
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="unpaid_members">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle size={14} className="text-amber-500" /> Unpaid Members
+                      </div>
+                    </SelectItem>
                     <SelectItem value="all">
                       <div className="flex items-center gap-2">
                         <Users size={14} /> All Members
                       </div>
                     </SelectItem>
+                    <Separator className="my-1" />
                     <SelectItem value="student">
                       <div className="flex items-center gap-2">
                         <School size={14} /> Students
@@ -346,7 +365,7 @@ export default function Newsletter() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Audience Statistics</p>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Selected Group</span>
-                  <span className="font-medium capitalize">{recipientFilter}</span>
+                  <span className="font-medium capitalize">{recipientFilter.replace('_', ' ')}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Total Emails</span>
