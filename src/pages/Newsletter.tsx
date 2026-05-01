@@ -248,8 +248,8 @@ export default function Newsletter() {
                       ref={editorRef}
                       contentEditable
                       onInput={handleEditorChange}
-                      className="p-8 min-h-[450px] outline-none prose prose-sm max-w-none prose-headings:font-bold prose-img:rounded-lg focus:placeholder:opacity-0"
-                      placeholder="Start drafting your newsletter message..."
+                      data-placeholder="Start drafting your newsletter message..."
+                      className="p-8 min-h-[450px] outline-none prose prose-sm max-w-none prose-headings:font-bold prose-img:rounded-lg"
                     />
                   </div>
                 )}
