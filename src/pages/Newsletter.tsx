@@ -33,10 +33,16 @@ export default function Newsletter() {
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const execCommand = (command: string, value: string = '') => {
+    editorRef.current?.focus();
     document.execCommand(command, false, value);
     if (editorRef.current) {
       setContent(editorRef.current.innerHTML);
     }
+  };
+
+  // Prevent toolbar buttons from stealing focus / killing the selection
+  const preventBlur = (e: React.MouseEvent) => {
+    e.preventDefault();
   };
 
   const handleEditorChange = () => {
