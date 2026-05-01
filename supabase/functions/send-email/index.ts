@@ -87,8 +87,8 @@ function wrapHtmlContent(content: string | undefined): string {
     </div>
     <div class="footer">
       <div class="social-links">
-        <a href="https://www.ibmssp.org.ng"><img src="https://img.icons8.com/color/48/linkedin.png" width="24" height="24"></a>
-        <a href="https://www.ibmssp.org.ng"><img src="https://img.icons8.com/ios-filled/50/000000/twitterx--v1.png" width="24" height="24"></a>
+        <a href="https://www.linkedin.com/company/ibmssp"><img src="https://img.icons8.com/color/48/linkedin.png" width="24" height="24"></a>
+        <a href="https://x.com/ibmssp_ng"><img src="https://img.icons8.com/ios-filled/50/000000/twitterx--v1.png" width="24" height="24"></a>
       </div>
       <p>© ${new Date().getFullYear()} Institute of Business Management Systems Standards Practitioners.</p>
       <p><a href="https://www.ibmssp.org.ng" style="color: #059669; text-decoration: none; font-weight: bold;">www.ibmssp.org.ng</a></p>
