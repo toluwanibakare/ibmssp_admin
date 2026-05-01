@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,16 +64,37 @@ export default function Newsletter() {
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const insertImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          const imgHtml = `<img src="${event.target.result}" style="max-width: 100%; border-radius: 8px; margin: 10px 0;" />`;
-          execCommand('insertHTML', imgHtml);
-        }
-      };
-      reader.readAsDataURL(e.target.files[0]);
+  const insertImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be smaller than 5MB');
+      return;
+    }
+
+    const uploadingToast = toast.loading('Uploading image...');
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const path = `newsletter/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('assets')
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (uploadError) throw uploadError;
+
+      const { data: pub } = supabase.storage.from('assets').getPublicUrl(path);
+      const imgHtml = `<img src="${pub.publicUrl}" style="max-width: 100%; border-radius: 8px; margin: 10px 0;" />`;
+      execCommand('insertHTML', imgHtml);
+      toast.success('Image inserted', { id: uploadingToast });
+    } catch (err: any) {
+      toast.error(`Upload failed: ${err.message || 'Unknown error'}`, { id: uploadingToast });
+    } finally {
+      // reset so same file can be re-selected
+      if (imageInputRef.current) imageInputRef.current.value = '';
     }
   };
 
