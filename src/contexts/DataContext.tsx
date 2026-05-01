@@ -412,7 +412,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           to: data.to,
           subject: data.subject,
           text: appendEmailFooter(data.text),
-          html: appendEmailFooter(data.html),
+          html: data.html, // Don't append plain text footer to HTML
           recipientName: data.recipientName || data.to,
         },
       });
