@@ -72,7 +72,7 @@ function wrapHtmlContent(content: string | undefined): string {
     .footer { padding: 30px; background-color: #f9fafb; border-top: 1px solid #f3f4f6; text-align: center; color: #9ca3af; font-size: 12px; }
     .content h1 { color: #111827; margin-top: 0; }
     .content p { margin-bottom: 1em; }
-    .content img { max-width: 100%; border-radius: 8px; }
+    .content img { max-width: 450px; width: 100%; height: auto; border-radius: 12px; margin: 20px auto; display: block; }
     .social-links { margin-bottom: 15px; }
     .social-links a { margin: 0 10px; text-decoration: none; }
   </style>

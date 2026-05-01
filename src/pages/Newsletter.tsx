@@ -94,7 +94,7 @@ export default function Newsletter() {
           .from('assets')
           .getPublicUrl(filePath);
 
-        const imgHtml = `<img src="${publicUrl}" style="max-width: 100%; border-radius: 8px; margin: 10px 0; display: block;" />`;
+        const imgHtml = `<div style="text-align: center; margin: 20px 0;"><img src="${publicUrl}" style="max-width: 450px; width: 100%; height: auto; border-radius: 12px; shadow: 0 4px 6px rgba(0,0,0,0.1);" /></div><p></p>`;
         execCommand('insertHTML', imgHtml);
         
         toast.success('Image added and optimized!', { id: toastId });
