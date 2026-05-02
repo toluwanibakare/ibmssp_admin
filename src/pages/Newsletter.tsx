@@ -64,12 +64,10 @@ export default function Newsletter() {
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const insertImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  // Shared: upload an image File/Blob to storage and insert it into the editor
+  const uploadAndInsertImage = async (file: File | Blob, fallbackName = 'image.png') => {
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select a valid image file');
+      toast.error('Only image files are supported');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -79,7 +77,8 @@ export default function Newsletter() {
 
     const uploadingToast = toast.loading('Uploading image...');
     try {
-      const ext = file.name.split('.').pop() || 'png';
+      const name = (file as File).name || fallbackName;
+      const ext = name.includes('.') ? name.split('.').pop() : (file.type.split('/')[1] || 'png');
       const path = `newsletter/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('assets')
@@ -88,13 +87,58 @@ export default function Newsletter() {
 
       const { data: pub } = supabase.storage.from('assets').getPublicUrl(path);
       const imgHtml = `<img src="${pub.publicUrl}" style="max-width: 100%; border-radius: 8px; margin: 10px 0;" />`;
-      execCommand('insertHTML', imgHtml);
+      editorRef.current?.focus();
+      document.execCommand('insertHTML', false, imgHtml);
+      if (editorRef.current) setContent(editorRef.current.innerHTML);
       toast.success('Image inserted', { id: uploadingToast });
     } catch (err: any) {
       toast.error(`Upload failed: ${err.message || 'Unknown error'}`, { id: uploadingToast });
+    }
+  };
+
+  const insertImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      await uploadAndInsertImage(file);
     } finally {
-      // reset so same file can be re-selected
       if (imageInputRef.current) imageInputRef.current.value = '';
+    }
+  };
+
+  // Intercept pasted images (clipboard from screenshots, web, other apps)
+  const handleEditorPaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const imageItems: DataTransferItem[] = [];
+    let hasNonImage = false;
+    for (const item of Array.from(items)) {
+      if (item.kind === 'file' && item.type.startsWith('image/')) {
+        imageItems.push(item);
+      } else if (item.kind === 'string') {
+        hasNonImage = true;
+      }
+    }
+    if (imageItems.length === 0) return; // let default paste handle text/html
+
+    e.preventDefault();
+    for (const item of imageItems) {
+      const file = item.getAsFile();
+      if (file) await uploadAndInsertImage(file);
+    }
+    // If HTML was also on clipboard, drop it — it likely contained the same image as data URI/blob URL
+    if (hasNonImage) {
+      // no-op: we already inserted the hosted version
+    }
+  };
+
+  // Intercept dropped image files
+  const handleEditorDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
+    if (files.length === 0) return;
+    e.preventDefault();
+    for (const file of files) {
+      await uploadAndInsertImage(file);
     }
   };
 
