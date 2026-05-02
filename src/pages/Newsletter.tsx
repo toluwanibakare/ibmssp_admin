@@ -320,6 +320,9 @@ export default function Newsletter() {
                       ref={editorRef}
                       contentEditable
                       onInput={handleEditorChange}
+                      onPaste={handleEditorPaste}
+                      onDrop={handleEditorDrop}
+                      onDragOver={(e) => e.preventDefault()}
                       data-placeholder="Start drafting your newsletter message..."
                       className="p-8 min-h-[450px] outline-none prose prose-sm max-w-none prose-headings:font-bold prose-img:rounded-lg"
                     />
