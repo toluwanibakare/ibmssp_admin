@@ -9,6 +9,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,10 +43,16 @@ export default function Newsletter() {
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const execCommand = (command: string, value: string = '') => {
+    editorRef.current?.focus();
     document.execCommand(command, false, value);
     if (editorRef.current) {
       setContent(editorRef.current.innerHTML);
     }
+  };
+
+  // Prevent toolbar buttons from stealing focus / killing the selection
+  const preventBlur = (e: React.MouseEvent) => {
+    e.preventDefault();
   };
 
   const handleEditorChange = () => {
@@ -326,16 +333,16 @@ export default function Newsletter() {
                   <div className="rounded-xl border border-slate-200 bg-background overflow-hidden flex flex-col shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30 transition-all">
                     {/* Toolbar */}
                     <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-50/50 border-b border-slate-200">
-                      <Button variant="ghost" size="icon" onClick={() => execCommand('bold')} title="Bold" className="hover:bg-white"><Bold size={16} /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => execCommand('italic')} title="Italic" className="hover:bg-white"><Italic size={16} /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => execCommand('underline')} title="Underline" className="hover:bg-white"><Underline size={16} /></Button>
+                      <Button type="button" variant="ghost" size="icon" onMouseDown={preventBlur} onClick={() => execCommand('bold')} title="Bold" className="hover:bg-white"><Bold size={16} /></Button>
+                      <Button type="button" variant="ghost" size="icon" onMouseDown={preventBlur} onClick={() => execCommand('italic')} title="Italic" className="hover:bg-white"><Italic size={16} /></Button>
+                      <Button type="button" variant="ghost" size="icon" onMouseDown={preventBlur} onClick={() => execCommand('underline')} title="Underline" className="hover:bg-white"><Underline size={16} /></Button>
                       <Separator orientation="vertical" className="h-6 mx-2" />
-                      <Button variant="ghost" size="icon" onClick={() => execCommand('insertUnorderedList')} title="Bullet List" className="hover:bg-white"><List size={16} /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => execCommand('insertOrderedList')} title="Numbered List" className="hover:bg-white"><ListOrdered size={16} /></Button>
+                      <Button type="button" variant="ghost" size="icon" onMouseDown={preventBlur} onClick={() => execCommand('insertUnorderedList')} title="Bullet List" className="hover:bg-white"><List size={16} /></Button>
+                      <Button type="button" variant="ghost" size="icon" onMouseDown={preventBlur} onClick={() => execCommand('insertOrderedList')} title="Numbered List" className="hover:bg-white"><ListOrdered size={16} /></Button>
                       <Separator orientation="vertical" className="h-6 mx-2" />
-                      <Button variant="ghost" size="icon" onClick={() => execCommand('justifyLeft')} title="Align Left" className="hover:bg-white"><AlignLeft size={16} /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => execCommand('justifyCenter')} title="Align Center" className="hover:bg-white"><AlignCenter size={16} /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => execCommand('justifyRight')} title="Align Right" className="hover:bg-white"><AlignRight size={16} /></Button>
+                      <Button type="button" variant="ghost" size="icon" onMouseDown={preventBlur} onClick={() => execCommand('justifyLeft')} title="Align Left" className="hover:bg-white"><AlignLeft size={16} /></Button>
+                      <Button type="button" variant="ghost" size="icon" onMouseDown={preventBlur} onClick={() => execCommand('justifyCenter')} title="Align Center" className="hover:bg-white"><AlignCenter size={16} /></Button>
+                      <Button type="button" variant="ghost" size="icon" onMouseDown={preventBlur} onClick={() => execCommand('justifyRight')} title="Align Right" className="hover:bg-white"><AlignRight size={16} /></Button>
                       <Separator orientation="vertical" className="h-6 mx-2" />
                       <Button 
                         variant="ghost" 
@@ -355,8 +362,11 @@ export default function Newsletter() {
                       ref={editorRef}
                       contentEditable
                       onInput={handleEditorChange}
-                      className="p-8 min-h-[450px] outline-none prose prose-sm max-w-none prose-headings:font-bold prose-img:rounded-lg focus:placeholder:opacity-0"
-                      placeholder="Start drafting your newsletter message..."
+                      onPaste={handleEditorPaste}
+                      onDrop={handleEditorDrop}
+                      onDragOver={(e) => e.preventDefault()}
+                      data-placeholder="Start drafting your newsletter message..."
+                      className="p-8 min-h-[450px] outline-none prose prose-sm max-w-none prose-headings:font-bold prose-img:rounded-lg"
                     />
                   </div>
                 )}

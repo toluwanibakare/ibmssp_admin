@@ -13,11 +13,55 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const EMAIL_HEADER_HTML = `
-  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; border-bottom: 3px solid #059669;">
+function buildBrandedEmail(innerHtml: string): string {
+  const year = new Date().getFullYear();
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IBMSSP</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f9fafb;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f9fafb;padding:20px 0;">
     <tr>
-      <td align="center" style="padding: 25px 0;">
-        <img src="https://ukjmduimszrydwoyrksi.supabase.co/storage/v1/object/public/assets/ibmssp-logo.png" alt="IBMSSP" style="height: 70px; width: auto; display: block; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));" onerror="this.style.display='none'; this.nextSibling.style.display='block';" /><span style="display:none; color: #059669; font-size: 24px; font-weight: bold; letter-spacing: -0.5px;">IBMSSP</span>
+      <td align="center">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+          <!-- Header -->
+          <tr>
+            <td align="center" style="padding:32px 20px;border-bottom:3px solid #059669;background:#ffffff;">
+              <img src="${LOGO_URL}" alt="IBMSSP" height="64" style="height:64px;width:auto;display:block;border:0;outline:none;text-decoration:none;" />
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px;line-height:1.6;color:#374151;font-size:16px;">
+              ${innerHtml}
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:40px 20px;background-color:#fcfcfc;border-top:1px solid #f1f5f9;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 24px;">
+                <tr>
+                  <td style="padding:0 8px;"><a href="https://www.linkedin.com/company/ibmssp" style="text-decoration:none;"><img src="https://img.icons8.com/color/48/linkedin.png" width="32" height="32" alt="LinkedIn" style="display:block;border:0;" /></a></td>
+                  <td style="padding:0 8px;"><a href="https://x.com/ibmssp" style="text-decoration:none;"><img src="https://img.icons8.com/ios-filled/50/000000/twitterx--v1.png" width="32" height="32" alt="X" style="display:block;border:0;" /></a></td>
+                  <td style="padding:0 8px;"><a href="https://wa.me/2348023644148" style="text-decoration:none;"><img src="https://img.icons8.com/color/48/whatsapp.png" width="32" height="32" alt="WhatsApp" style="display:block;border:0;" /></a></td>
+                </tr>
+              </table>
+              <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#111827;font-family:'Segoe UI',Tahoma,Arial,sans-serif;">
+                © ${year} Institute of Business Management Systems Standards Practitioners (IBMSSP).
+              </p>
+              <p style="margin:0 0 16px;font-size:13px;color:#4b5563;max-width:480px;line-height:1.6;font-family:'Segoe UI',Tahoma,Arial,sans-serif;">
+                A body of professionals in the business sustainability environment, registered by the Corporate Affairs Commission on June 12th, 2025.
+              </p>
+              <div style="border-top:1px solid #e5e7eb;width:48px;margin:0 auto 16px;"></div>
+              <p style="margin:0;">
+                <a href="https://www.ibmssp.org.ng" style="color:#059669;text-decoration:none;font-weight:600;font-size:13px;">www.ibmssp.org.ng</a>
+              </p>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>
@@ -139,12 +183,11 @@ Deno.serve(async (req) => {
 
     await client.close();
 
-    // Log to database
     await supabase.from("sent_emails").insert({
       recipient_email: to,
       recipient_name: recipientName || to,
       subject,
-      body: finalHtml || finalText,
+      body: finalHtml,
       status: "sent",
       sent_by: userId,
     });
@@ -161,9 +204,8 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error("Send email error:", error);
-
     return new Response(
-      JSON.stringify({ success: false, message: error.message || "Failed to send email" }),
+      JSON.stringify({ success: false, message: (error as Error).message || "Failed to send email" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
