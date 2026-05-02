@@ -3,8 +3,10 @@ import {
   Send, Image as ImageIcon, Paperclip, Bold, Italic, List, 
   ListOrdered, AlignLeft, AlignCenter, AlignRight, Underline,
   Eye, Save, Trash2, X, Plus, FileText, CheckCircle2, Loader2,
-  Users, UserCheck, GraduationCap, School, Building2, Linkedin, MessageCircle
+  Users, UserCheck, GraduationCap, School, Building2, Linkedin, MessageCircle,
+  CreditCard, AlertCircle, Info, Zap
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { useData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +18,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Search, UserMinus, UserPlus } from 'lucide-react';
 import ibmsspLogo from '@/assets/ibmssp-logo.png';
 
 export default function Newsletter() {
@@ -23,11 +28,15 @@ export default function Newsletter() {
   const { user } = useAuth();
   
   const [subject, setSubject] = useState('');
-  const [recipientFilter, setRecipientFilter] = useState('all');
+  const [recipientFilter, setRecipientFilter] = useState('paid_members');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [content, setContent] = useState('');
+  const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [contentSize, setContentSize] = useState(0);
   
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,88 +73,112 @@ export default function Newsletter() {
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Shared: upload an image File/Blob to storage and insert it into the editor
-  const uploadAndInsertImage = async (file: File | Blob, fallbackName = 'image.png') => {
-    if (!file.type.startsWith('image/')) {
-      toast.error('Only image files are supported');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be smaller than 5MB');
-      return;
-    }
-
-    const uploadingToast = toast.loading('Uploading image...');
-    try {
-      const name = (file as File).name || fallbackName;
-      const ext = name.includes('.') ? name.split('.').pop() : (file.type.split('/')[1] || 'png');
-      const path = `newsletter/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from('assets')
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (uploadError) throw uploadError;
-
-      const { data: pub } = supabase.storage.from('assets').getPublicUrl(path);
-      const imgHtml = `<img src="${pub.publicUrl}" style="max-width: 100%; border-radius: 8px; margin: 10px 0;" />`;
-      editorRef.current?.focus();
-      document.execCommand('insertHTML', false, imgHtml);
-      if (editorRef.current) setContent(editorRef.current.innerHTML);
-      toast.success('Image inserted', { id: uploadingToast });
-    } catch (err: any) {
-      toast.error(`Upload failed: ${err.message || 'Unknown error'}`, { id: uploadingToast });
-    }
-  };
-
   const insertImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      await uploadAndInsertImage(file);
-    } finally {
-      if (imageInputRef.current) imageInputRef.current.value = '';
-    }
-  };
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // Check file size (limit to 5MB for upload)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image is too large. Please use a file under 5MB.');
+        return;
+      }
 
-  // Intercept pasted images (clipboard from screenshots, web, other apps)
-  const handleEditorPaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    const imageItems: DataTransferItem[] = [];
-    let hasNonImage = false;
-    for (const item of Array.from(items)) {
-      if (item.kind === 'file' && item.type.startsWith('image/')) {
-        imageItems.push(item);
-      } else if (item.kind === 'string') {
-        hasNonImage = true;
+      setIsUploadingImage(true);
+      const toastId = toast.loading('Optimizing and uploading image...');
+
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+        const filePath = `newsletter_images/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('assets')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('assets')
+          .getPublicUrl(filePath);
+
+        const imgHtml = `<div style="text-align: center; margin: 20px 0;"><img src="${publicUrl}" style="max-width: 450px; width: 100%; height: auto; border-radius: 12px; shadow: 0 4px 6px rgba(0,0,0,0.1);" /></div><p></p>`;
+        execCommand('insertHTML', imgHtml);
+        
+        toast.success('Image added and optimized!', { id: toastId });
+      } catch (error: any) {
+        console.error('Upload error:', error);
+        toast.error('Failed to upload image: ' + error.message, { id: toastId });
+      } finally {
+        setIsUploadingImage(false);
+        if (imageInputRef.current) imageInputRef.current.value = '';
       }
     }
-    if (imageItems.length === 0) return; // let default paste handle text/html
-
-    e.preventDefault();
-    for (const item of imageItems) {
-      const file = item.getAsFile();
-      if (file) await uploadAndInsertImage(file);
-    }
-    // If HTML was also on clipboard, drop it — it likely contained the same image as data URI/blob URL
-    if (hasNonImage) {
-      // no-op: we already inserted the hosted version
-    }
   };
 
-  // Intercept dropped image files
-  const handleEditorDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-    const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
-    if (files.length === 0) return;
-    e.preventDefault();
-    for (const file of files) {
-      await uploadAndInsertImage(file);
-    }
-  };
+  // Monitor content size
+  useEffect(() => {
+    // Gmail clips at 102KB. Edge function adds ~8KB overhead.
+    const overhead = 8000;
+    const size = new Blob([content]).size + overhead;
+    setContentSize(size);
+  }, [content]);
+
+  const sizeLimit = 102400; // 102KB
+  const isClipped = contentSize > sizeLimit;
+  const sizePercentage = Math.min(Math.round((contentSize / sizeLimit) * 100), 100);
+  const sizeColor = isClipped ? 'text-destructive' : contentSize > sizeLimit * 0.8 ? 'text-amber-500' : 'text-emerald-500';
 
   const filteredMembers = members.filter(m => {
+    if (recipientFilter === 'specific') {
+      return selectedMemberIds.includes(m.member_id);
+    }
     if (recipientFilter === 'all') return true;
+    if (recipientFilter === 'paid_members') {
+      return (m.payment_status || '').toLowerCase() === 'paid' && 
+             (m.registration_status || '').toLowerCase() === 'approved';
+    }
+    if (recipientFilter === 'unpaid_members') {
+      return (m.payment_status || '').toLowerCase() !== 'paid';
+    }
     return m.category === recipientFilter;
   });
+
+  const handleToggleMember = (id: number) => {
+    setSelectedMemberIds(prev => 
+      prev.includes(id) ? prev.filter(mid => mid !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const visibleMemberIds = members
+      .filter(m => 
+        `${m.first_name} ${m.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.email.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .map(m => m.member_id);
+    
+    setSelectedMemberIds(prev => Array.from(new Set([...prev, ...visibleMemberIds])));
+  };
+
+  const handleDeselectAll = () => {
+    if (searchQuery) {
+      const visibleMemberIds = members
+        .filter(m => 
+          `${m.first_name} ${m.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          m.email.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .map(m => m.member_id);
+      setSelectedMemberIds(prev => prev.filter(id => !visibleMemberIds.includes(id)));
+    } else {
+      setSelectedMemberIds([]);
+    }
+  };
+
+  const searchFilteredMembers = members.filter(m => 
+    `${m.first_name} ${m.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    m.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    m.public_id?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleSend = async () => {
     if (!subject.trim()) {
@@ -172,8 +205,8 @@ export default function Newsletter() {
           to: member.email,
           recipientName: `${member.first_name} ${member.last_name}`,
           subject: subject,
-          html: content,
-          text: content.replace(/<[^>]*>/g, ''), // Basic HTML to text fallback
+          html: `<div class="newsletter-content">${content}</div>`,
+          text: content.replace(/<[^>]*>/g, ''), 
         });
         successCount++;
       }
@@ -311,7 +344,16 @@ export default function Newsletter() {
                       <Button type="button" variant="ghost" size="icon" onMouseDown={preventBlur} onClick={() => execCommand('justifyCenter')} title="Align Center" className="hover:bg-white"><AlignCenter size={16} /></Button>
                       <Button type="button" variant="ghost" size="icon" onMouseDown={preventBlur} onClick={() => execCommand('justifyRight')} title="Align Right" className="hover:bg-white"><AlignRight size={16} /></Button>
                       <Separator orientation="vertical" className="h-6 mx-2" />
-                      <Button type="button" variant="ghost" size="icon" onMouseDown={preventBlur} onClick={() => imageInputRef.current?.click()} title="Insert Image" className="hover:bg-white"><ImageIcon size={16} /></Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => imageInputRef.current?.click()} 
+                        title="Insert Image" 
+                        className="hover:bg-white"
+                        disabled={isUploadingImage}
+                      >
+                        {isUploadingImage ? <Loader2 size={16} className="animate-spin text-primary" /> : <ImageIcon size={16} />}
+                      </Button>
                       <input type="file" ref={imageInputRef} className="hidden" accept="image/*" onChange={insertImage} />
                     </div>
                     
@@ -367,6 +409,33 @@ export default function Newsletter() {
                     ))}
                   </div>
                 )}
+                
+                <div className="mt-2 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap size={14} className={sizeColor} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Estimated Delivery Size</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden flex-shrink-0">
+                      <div 
+                        className={`h-full transition-all duration-500 ${isClipped ? 'bg-destructive' : contentSize > sizeLimit * 0.8 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                        style={{ width: `${sizePercentage}%` }}
+                      />
+                    </div>
+                    <span className={`text-[11px] font-mono font-bold ${sizeColor}`}>
+                      {(contentSize / 1024).toFixed(1)} KB / 102 KB
+                    </span>
+                  </div>
+                </div>
+                {isClipped && (
+                  <div className="flex items-start gap-2 p-2 rounded-lg bg-destructive/5 border border-destructive/10 mt-2">
+                    <AlertCircle size={14} className="text-destructive mt-0.5 shrink-0" />
+                    <p className="text-[10px] text-destructive leading-relaxed">
+                      <strong>Warning:</strong> This message exceeds the 102KB limit and will be clipped by Gmail. 
+                      Try removing large images or reducing text.
+                    </p>
+                  </div>
+                )}
               </div>
             </CardFooter>
           </Card>
@@ -388,11 +457,22 @@ export default function Newsletter() {
                     <SelectValue placeholder="Choose audience" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="paid_members">
+                      <div className="flex items-center gap-2">
+                        <CreditCard size={14} className="text-emerald-500" /> Paid Members (Approved)
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="unpaid_members">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle size={14} className="text-amber-500" /> Unpaid Members
+                      </div>
+                    </SelectItem>
                     <SelectItem value="all">
                       <div className="flex items-center gap-2">
                         <Users size={14} /> All Members
                       </div>
                     </SelectItem>
+                    <Separator className="my-1" />
                     <SelectItem value="student">
                       <div className="flex items-center gap-2">
                         <School size={14} /> Students
@@ -413,15 +493,87 @@ export default function Newsletter() {
                         <Building2 size={14} /> Organizations
                       </div>
                     </SelectItem>
+                    <Separator className="my-1" />
+                    <SelectItem value="specific">
+                      <div className="flex items-center gap-2">
+                        <UserCheck size={14} className="text-primary" /> Specific Members
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {recipientFilter === 'specific' && (
+                <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Search members..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 h-9"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 text-[10px] uppercase font-bold text-primary hover:text-primary hover:bg-primary/5"
+                      onClick={handleSelectAll}
+                    >
+                      <UserPlus className="mr-1 h-3 w-3" /> Select {searchQuery ? 'Results' : 'All'}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 text-[10px] uppercase font-bold text-muted-foreground"
+                      onClick={handleDeselectAll}
+                    >
+                      <UserMinus className="mr-1 h-3 w-3" /> Clear {searchQuery ? 'Results' : 'All'}
+                    </Button>
+                  </div>
+
+                  <ScrollArea className="h-[300px] rounded-lg border border-border bg-background/30 p-2">
+                    <div className="space-y-1">
+                      {searchFilteredMembers.length > 0 ? (
+                        searchFilteredMembers.map((member) => (
+                          <div 
+                            key={member.member_id}
+                            className={`flex items-center space-x-3 p-2 rounded-md transition-colors cursor-pointer hover:bg-accent/50 ${selectedMemberIds.includes(member.member_id) ? 'bg-accent/30' : ''}`}
+                            onClick={() => handleToggleMember(member.member_id)}
+                          >
+                            <Checkbox 
+                              id={`member-${member.member_id}`}
+                              checked={selectedMemberIds.includes(member.member_id)}
+                              onCheckedChange={() => handleToggleMember(member.member_id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-medium truncate leading-none mb-1">
+                                {member.first_name} {member.last_name}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground truncate">
+                                {member.email}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-8 text-center text-xs text-muted-foreground">
+                          No members found matching "{searchQuery}"
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
 
               <div className="rounded-xl border border-border bg-background/50 p-4 space-y-3">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Audience Statistics</p>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Selected Group</span>
-                  <span className="font-medium capitalize">{recipientFilter}</span>
+                  <span className="font-medium capitalize">{recipientFilter.replace('_', ' ')}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Total Emails</span>

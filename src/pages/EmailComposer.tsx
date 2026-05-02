@@ -79,7 +79,7 @@ export default function EmailComposer() {
   const [mode, setMode] = useState<RecipientMode>('single');
   const [recipientTo, setRecipientTo] = useState(preEmail);
   const [recipientName, setRecipientName] = useState(preName);
-  const [selectedCategory, setSelectedCategory] = useState('student');
+  const [selectedCategory, setSelectedCategory] = useState('paid_members');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
@@ -143,7 +143,18 @@ export default function EmailComposer() {
           html: `<p>${escapeHtml(mergedBody).replace(/\n/g, '<br>')}</p>`,
         });
       } else {
-        const catMembers = members.filter((m) => m.category === selectedCategory);
+        const catMembers = members.filter((m) => {
+          if (selectedCategory === 'all_members') return true;
+          if (selectedCategory === 'paid_members') {
+            return (m.payment_status || '').toLowerCase() === 'paid' && 
+                   (m.registration_status || '').toLowerCase() === 'approved';
+          }
+          if (selectedCategory === 'unpaid_members') {
+            return (m.payment_status || '').toLowerCase() !== 'paid';
+          }
+          return m.category === selectedCategory;
+        });
+
         for (const m of catMembers) {
           const mergedSubject = applyMergeFields(subject, m);
           const mergedBody = applyMergeFields(body, m);
@@ -225,7 +236,17 @@ export default function EmailComposer() {
 
   const previewMember = mode === 'single'
     ? selectedMember
-    : members.find((m) => m.category === selectedCategory) || null;
+    : members.find((m) => {
+        if (selectedCategory === 'all_members') return true;
+        if (selectedCategory === 'paid_members') {
+          return (m.payment_status || '').toLowerCase() === 'paid' && 
+                 (m.registration_status || '').toLowerCase() === 'approved';
+        }
+        if (selectedCategory === 'unpaid_members') {
+          return (m.payment_status || '').toLowerCase() !== 'paid';
+        }
+        return m.category === selectedCategory;
+      }) || null;
   const previewSubject = applyMergeFields(subject || 'Hello {{name}}', previewMember, { name: recipientName, email: recipientTo });
   const previewBody = applyMergeFields(
     body || 'Hello {{name}},\nYour ID is {{user_id}} and phone is {{phone}}.\n\n{{all_details}}',
@@ -308,12 +329,19 @@ export default function EmailComposer() {
               </div>
             ) : (
               <div className="space-y-1.5">
-                <label className="text-xs font-medium">Category</label>
+                <label className="text-xs font-medium">Recipient Group</label>
                 <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="input-field">
-                  <option value="student">Students ({members.filter((m) => m.category === 'student').length})</option>
-                  <option value="graduate">Graduates ({members.filter((m) => m.category === 'graduate').length})</option>
-                  <option value="individual">Individuals ({members.filter((m) => m.category === 'individual').length})</option>
-                  <option value="organization">Organizations ({members.filter((m) => m.category === 'organization').length})</option>
+                  <optgroup label="Status Based">
+                    <option value="paid_members">Paid Members (Approved) ({members.filter(m => m.payment_status === 'paid' && m.registration_status === 'approved').length})</option>
+                    <option value="unpaid_members">Unpaid Members ({members.filter(m => m.payment_status !== 'paid').length})</option>
+                    <option value="all_members">All Members ({members.length})</option>
+                  </optgroup>
+                  <optgroup label="Member Categories">
+                    <option value="student">Students ({members.filter((m) => m.category === 'student').length})</option>
+                    <option value="graduate">Graduates ({members.filter((m) => m.category === 'graduate').length})</option>
+                    <option value="individual">Individuals ({members.filter((m) => m.category === 'individual').length})</option>
+                    <option value="organization">Organizations ({members.filter((m) => m.category === 'organization').length})</option>
+                  </optgroup>
                 </select>
               </div>
             )}

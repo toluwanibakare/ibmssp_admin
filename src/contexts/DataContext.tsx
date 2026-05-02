@@ -91,13 +91,6 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | null>(null);
 
 const initialStats: Stats = { total: 0, student: 0, graduate: 0, individual: 0, organization: 0, today: 0, approved: 0, pending: 0, paid: 0, unpaid: 0 };
-const EMAIL_FOOTER_TEXT = 'For more information visit our website: www.ibmssp.org.ng or contact us on: +2348023644148';
-
-function appendEmailFooter(content?: string | null) {
-  const value = content || '';
-  if (value.includes('www.ibmssp.org.ng') || value.includes('+2348023644148')) return value;
-  return `${value}${value ? '\n\n' : ''}${EMAIL_FOOTER_TEXT}`;
-}
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -411,8 +404,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         body: {
           to: data.to,
           subject: data.subject,
-          text: appendEmailFooter(data.text),
-          html: appendEmailFooter(data.html),
+          text: data.text || '',
+          html: data.html || '',
           recipientName: data.recipientName || data.to,
         },
       });
